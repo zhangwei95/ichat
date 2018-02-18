@@ -90,7 +90,7 @@
                     android:layout_weight="0.6"
                     android:layout_height="45dip"
 
-                    android:background="@anim/edit_text"
+                    android:background="@animator/edit_text"
                     android:hint="请输入内容"
                     android:inputType="textWebEditText"
                     android:text="" />
