@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="70dp">
+    <ImageView
+        android:id="@+id/iv_usericon"
+        android:background="@drawable/border_bg"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginLeft="5dp"
+        android:layout_gravity="center"
+        android:scaleType="fitCenter"
+        />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="20px"
+        android:layout_weight="0.6">
+        <TextView
+            android:id="@+id/tv_nickname"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:textColor="#000000"
+            android:textSize="20sp"
+            android:text="我只是个路人甲"/>
+        <TextView
+            android:id="@+id/tv_nearchat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+
+            android:textColor="#4b4b4b"
+            android:text="发来了一条消息"/>
+    </LinearLayout>
+    <TextView
+        android:id="@+id/tv_nearchat_time"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginTop="5dp"
+        android:layout_weight="0.2"
+        android:text="晚上6:25"
+        />
+
+</LinearLayout>

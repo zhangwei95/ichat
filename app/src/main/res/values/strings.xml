@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">IChat</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_message">消息</string>
+    <string name="title_friend">好友</string>
+    <string name="title_mine">我</string>
+    <string name="default_ip">192.168.155.1</string>
+
+    <!-- 默认的服务器配置 -->
+    <integer name="xmpp_port">5222</integer>
+    <string name="xmpp_host">192.168.155.1</string>
+    <string name="xmpp_service_name">zw</string>
+    <bool name="is_remember">true</bool>
+    <bool name="is_autologin">false</bool>
+
+    <!-- 数据库和文件路径 -->
+    <string name="dir">/Ichat</string>
+    <string name="app_dir">/app</string>
+    <string name="db_dir">/database</string>
+    <string name="img_dir">/img</string>
+
+
+    <!-- 我的消息 -->
+    <string name="check_sys_msg">查看系统消息</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="delete_user_confim">删除用户会将该用户所有聊天记录一并删除，是否继续?</string>
+    <string name="new_message">收到新短消息</string>
+
+    <!-- 聊天记录 -->
+    <string name="failedconnection">网络连接不可用，请检查网络设置</string>
+    <string name="chat_exprot">导出</string>
+    <string name="chat_delete">删除</string>
+    <string name="chat_clear">清空</string>
+    <string name="chat_check_history">查看聊天记录</string>
+    <string name="chat_his_with_sb">与%1$s的聊天记录</string>
+</resources>

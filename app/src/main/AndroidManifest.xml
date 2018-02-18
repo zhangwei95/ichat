@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:application="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.example.q.xmppclient">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- - 访问网络状态 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- 在SDCard中创建与删除文件权限 -->
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <!-- SMS -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.GET_TASKS" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <application
+        android:name=".manager.AppManager"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        tools:replace="android:name">
+        <meta-data
+            android:name="Mob-AppKey"
+            android:value="23b1270e6bd38" />
+        <meta-data
+            android:name="Mob-AppSecret"
+            android:value="40e876da22dd51d9f0b41fb1ab78c661" />
+
+        <activity android:name=".activity.LoginActivity">
+
+        </activity>
+        <activity
+            android:name=".activity.MainActivity"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!--<intent-filter>-->
+                <!--<action android:name="com.example.q.xmppclient.action_login" />-->
+                <!--<category android:name="android.intent.category.DEFAULT" />-->
+            <!--</intent-filter>-->
+        </activity>
+        <activity
+            android:name=".activity.RegisterActivity"
+            android:label="注册">
+            <intent-filter>
+                <action android:name="android.intent.action.register" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".activity.AvatarActivity"
+            android:label="头像">
+            <intent-filter>
+                <action android:name="android.intent.action.avatar" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- <service -->
+        <!-- android:name=".ConnectService" -->
+        <!-- android:enabled="true" -->
+        <!-- android:exported="true" /> -->
+        <activity
+            android:name=".activity.ChatActivity"
+            android:launchMode="singleTask" />
+
+
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <receiver
+            android:name=".activity.MainActivity$ContacterReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.INPUT_METHOD_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <activity
+            android:name=".activity.UserInfoActivity"
+            android:launchMode="singleTop" />
+
+
+
+        <activity
+            android:name="com.mob.tools.MobUIShell"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+        <activity android:name=".activity.PhoneCheckActivity" />
+        <activity android:name=".activity.UserAddActivity"
+            android:windowSoftInputMode="stateAlwaysVisible"/>
+        <activity android:name=".activity.GroupActivity" />
+        <service
+            android:name=".service.ChatService"
+            android:enabled="true"
+            />
+        <service
+            android:name=".service.ReconnectService"
+            android:enabled="true"/>
+        <service android:name=".service.ContactService"
+            android:enabled="true"/>
+    </application>
+
+</manifest>

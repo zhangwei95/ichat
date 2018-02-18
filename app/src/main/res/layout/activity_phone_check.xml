@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/activity_phone_check"
+    tools:context="com.example.q.xmppclient.activity.PhoneCheckActivity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:popupTheme="@style/popup_theme"
+        android:theme="@style/ToolbarTheme">
+    </android.support.v7.widget.Toolbar>
+    <EditText
+        android:id="@+id/et_input_phone"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="100dp"
+        android:ems="10"
+        android:hint="请输入手机号"
+        android:inputType="phone" />
+
+    <requestFocus />
+
+    <EditText
+        android:id="@+id/et_input_yanzhengma"
+        android:layout_width="170dp"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/et_input_phone"
+        android:layout_below="@+id/et_input_phone"
+        android:layout_marginTop="44dp"
+        android:hint="请输入验证码"
+        >
+    </EditText>
+
+    <Button
+        android:id="@+id/login_request_code_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@+id/et_input_phone"
+        android:layout_alignTop="@+id/et_input_yanzhengma"
+        android:text="获取验证码"
+        android:onClick="play"
+        />
+    <Button
+        android:id="@+id/login_commit_btn"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/et_input_yanzhengma"
+        android:layout_below="@+id/et_input_yanzhengma"
+        android:layout_marginTop="44dp"
+        android:text="提交"
+        android:onClick="tijiao"
+        />
+</RelativeLayout>

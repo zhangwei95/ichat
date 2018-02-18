@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vCard ><N><FAMILY/>
+    <GIVEN/>
+    <MIDDLE/>
+</N>
+    <ORG><ORGNAME/>
+        <ORGUNIT/>
+    </ORG>
+
+    <TITLE/>
+    <FN/>
+    <URL/>
+    <EMAIL><HOME/><INTERNET/><PREF/><USERID/>
+    </EMAIL>
+    <TEL><CELL/><WORK/><NUMBER/>
+    </TEL>
+    <TEL><VOICE/><WORK/><NUMBER/>
+    </TEL>
+    <TEL><PAGER/><WORK/><NUMBER/>
+    </TEL>
+    <TEL><FAX/><WORK/><NUMBER/>
+    </TEL>
+    <TEL><CELL/><HOME/><NUMBER/>
+    </TEL>
+    <TEL><VOICE/><HOME/><NUMBER/>
+    </TEL>
+    <TEL><PAGER/><HOME/><NUMBER/>
+    </TEL>
+    <TEL><FAX/><HOME/><NUMBER/>
+    </TEL>
+    <ADR><WORK/><LOCALITY/>
+        <STREET/>
+        <PCODE/>
+        <CTRY/>
+        <REGION/>
+    </ADR>
+    <ADR><HOME/><LOCALITY/>
+        <STREET/>
+        <PCODE/>
+        <CTRY/>
+        <REGION/>
+    </ADR>
+</vCard>

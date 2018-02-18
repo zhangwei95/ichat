@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="white">#ffffff</color>
+    <color name="cleargary">#EEEEFF</color>
+    <color name="gary">#ababab</color>
+    <color name="black">#000000</color>
+    <color name="darkgray">#4B4B4B</color>
+    <color name="touchevent">#efefef</color>
+    <color name="window_bg">#fff0f3f6</color>
+    <item type="color" name="chat_background">@color/window_bg</item>
+</resources>
