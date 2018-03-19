@@ -121,6 +121,7 @@ public class MainActivity extends ActivityBase {
     @Override
     protected void onResume() {
         initPersonInfo();
+        inviteNotices=null;
         inviteNotices = new ArrayList<ChatRecordInfo>();
 //        for(Notice item : noticeManager.getNoticeListByTypeAndPage(Notice.UNREAD))
 //        {
@@ -455,7 +456,7 @@ public class MainActivity extends ActivityBase {
                         case Constant.LOGIN_SUCCESS:
                             Toast.makeText(context, Constant.LOGIN_SUCCESS_MESSAGE, Toast.LENGTH_SHORT).show();
                             loginConfig=getLoginConfig();
-                            initPersonInfo();
+                            onResume();
                             break;
                         case Constant.LOGIN_ERROR:
                             Toast.makeText(context,Constant.LOGIN_ERROR_MESSAGE, Toast.LENGTH_SHORT).show();
@@ -485,8 +486,6 @@ public class MainActivity extends ActivityBase {
             initFriendList();
             initRecentChatInfo();
             initPersonInfo();
-            initPersonInfo();
-
         }
 
     }
