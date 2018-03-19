@@ -63,7 +63,7 @@ public class XmppConnectionManager {
         //允许重连
         connectionConfiguration.setReconnectionAllowed(true);
         //设置在线状态
-        connectionConfiguration.setSendPresence(true);
+        connectionConfiguration.setSendPresence(false);
         connectionConfiguration.setSASLAuthenticationEnabled(true);
         // 收到好友邀请后manual表示需要经过同意,accept_all表示不经同意自动为好友
         Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.manual);
