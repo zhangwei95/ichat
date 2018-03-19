@@ -4,14 +4,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 import com.example.q.xmppclient.R;
 import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.entity.ChatMessage;
-import com.example.q.xmppclient.entity.MessageList;
 import com.example.q.xmppclient.entity.Notice;
 import com.example.q.xmppclient.entity.User;
 import com.example.q.xmppclient.manager.ContacterManager;
@@ -19,26 +16,28 @@ import com.example.q.xmppclient.manager.MessageManager;
 import com.example.q.xmppclient.manager.NoticeManager;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.util.DateUtil;
-import com.example.q.xmppclient.util.StringUtil;
 
 import org.jivesoftware.smack.Chat;
 import org.jivesoftware.smack.ChatManager;
 import org.jivesoftware.smack.ChatManagerListener;
 import org.jivesoftware.smack.MessageListener;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.Message;
 
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class AChatActivity extends ActivityTool {
-    private Chat chat = null;
-    private List<ChatMessage> message_pool = null;
-    private ChatManager chatman=null;
+public abstract class AChatActivity extends ActivityBase {
+    protected Chat chat = null;
+    protected List<ChatMessage> message_pool = null;
+    protected ChatManager chatman=null;
     protected String to;// 聊天人
     protected User chatUser;// 聊天人
     protected static int pageSize = 10;
-    private static int pagenum = 1;
+    protected static int pagenum = 1;
+    protected  static XmppConnectionManager xmppConnectionManager;
+    protected static XMPPConnection xmppConnection;
 //    private List<Notice> noticeList;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,26 +45,28 @@ public abstract class AChatActivity extends ActivityTool {
         setContentView(R.layout.activity_achat);
         pagenum=1;
         to = getIntent().getStringExtra("to");
-        chatUser = ContacterManager.getByUserJid(this,to,XmppConnectionManager.getInstance().getConnection());
+        xmppConnectionManager=XmppConnectionManager.getInstance();
+        xmppConnection=xmppConnectionManager.getConnection();
+//        chatUser = ContacterManager.getByUserJid(this,to,xmppConnection);
+        chatUser=ContacterManager.getUserByJidSql(to);
         if (to == null)
             return;
-        chatman=XmppConnectionManager.getInstance().getConnection()
-                .getChatManager();
+        chatman=xmppConnection.getChatManager();
         chat = chatman.createChat(to, null);
-//        chatman.addChatListener(new ChatManagerListener() {
-//            @Override
-//            public void chatCreated(Chat chat, boolean b) {
-//                chat.addMessageListener(new MessageListener() {
-//                    @Override
-//                    public void processMessage(Chat chat, Message message) {
-//                        if(message.getFrom().contains(chatUser.getJid()))
-//                        {
-//                            receiveNewMessage(message);
-//                        }
-//                    }
-//                });
-//            }
-//        });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        pagenum=1;
+        to = getIntent().getStringExtra("to");
+        xmppConnectionManager=XmppConnectionManager.getInstance();
+        xmppConnection=xmppConnectionManager.getConnection();
+        chatUser=ContacterManager.getUserByJidSql(to);
+        if (to == null)
+            return;
+        chatman=xmppConnection.getChatManager();
+        chat = chatman.createChat(to, null);
     }
 
     @Override
@@ -77,10 +78,13 @@ public abstract class AChatActivity extends ActivityTool {
         }
         super.onStart();
     }
-
     @Override
     protected void onResume() {
         // 第一次查询
+        xmppConnectionManager=XmppConnectionManager.getInstance();
+        xmppConnection=xmppConnectionManager.getConnection();
+        chatman=xmppConnection.getChatManager();
+        chat = chatman.createChat(to, null);
         pagenum=1;
         message_pool = MessageManager.getInstance(context)
                 .getMessageListByFrom(to, pagenum++, pageSize);
@@ -89,7 +93,6 @@ public abstract class AChatActivity extends ActivityTool {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Constant.NEW_MESSAGE_ACTION);
         registerReceiver(receiver, filter);
-
         // 更新某人所有通知
         NoticeManager.getInstance(context).updateStatusByFrom(to, Notice.READ);
         super.onResume();
@@ -147,9 +150,9 @@ public abstract class AChatActivity extends ActivityTool {
                         .getParcelableExtra(ChatMessage.IMMESSAGE_KEY);
                 if(message.getFromSubJid().equals(to))
                 {
-                message_pool.add(message);
-                receiveNewMessage(message);
-                refreshMessage(message_pool);
+                    message_pool.add(message);
+                    receiveNewMessage(message);
+                    refreshMessage(message_pool);
                 }
             }
         }
@@ -167,11 +170,14 @@ public abstract class AChatActivity extends ActivityTool {
         super.onPause();
         // 更新某人所有通知
         NoticeManager.getInstance(context).updateStatusByFrom(to, Notice.READ);
+        chat=null;
+        chatman=null;
+        xmppConnectionManager=null;
+        xmppConnection=null;
     }
 
     @Override
     protected void onStop() {
-
         super.onStop();
     }
 }

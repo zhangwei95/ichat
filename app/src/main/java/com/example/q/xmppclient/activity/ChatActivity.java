@@ -268,7 +268,6 @@ public class ChatActivity extends AChatActivity  {
         if (!getIntent().getBooleanExtra("isFriend", true)) {
             setTitle(StringUtil.getUserNameByJid(to));
         }else {
-            User chatUser = ContacterManager.getByUserJid(this, to, XmppConnectionManager.getInstance().getConnection());
             setTitle(chatUser.getNickName());
         }
         toolbar.setOnCreateContextMenuListener(this);
