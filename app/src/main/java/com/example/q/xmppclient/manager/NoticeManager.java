@@ -15,7 +15,9 @@ import com.example.q.xmppclient.util.StringUtil;
 
 import java.util.List;
 
+
 /**
+ * 消息管理器——单例模式
  * Created by q on 2017/11/5.
  */
 

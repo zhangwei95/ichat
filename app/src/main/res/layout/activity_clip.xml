@@ -1,10 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout android:orientation="vertical"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="#000000">
+
+    <!--<com.example.q.view.ZoomImageView-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:scaleType="matrix"-->
+    <!--android:src="@drawable/avatar_testthree"-->
+    <!--/>-->
+
+    <com.example.q.xmppclient.view.ClipImageLayout
+        android:id="@+id/id_clipImageLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        app:Drawable="@drawable/avatar"
+        />
     <android.support.v7.widget.Toolbar
         android:id="@+id/avator_toolbar"
         android:layout_width="match_parent"
@@ -14,24 +28,16 @@
         app:popupTheme="@style/popup_theme"
         android:theme="@style/ToolbarTheme">
         <Button
-            android:id="@+id/btn_avatar_save"
+            android:id="@+id/btn_avatar_clip"
             android:layout_gravity="right"
             android:textColor="@color/white"
             android:background="@drawable/btn_save_clip"
-            android:visibility="gone"
+            android:visibility="visible"
             android:textSize="40px"
-            android:text="保存"
+            android:text="裁剪"
             android:layout_marginRight="10dp"
             android:layout_width="60dp"
             android:layout_height="30dp"/>
     </android.support.v7.widget.Toolbar>
-        <ImageView
-            android:id="@+id/iv_icon"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:src="@drawable/avatar" />
+</RelativeLayout>
 
-
-
-</LinearLayout>

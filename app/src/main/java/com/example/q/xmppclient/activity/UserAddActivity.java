@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
@@ -15,19 +14,16 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.q.xmppclient.R;
-import com.example.q.xmppclient.entity.User;
-import com.example.q.xmppclient.manager.ContacterManager;
+import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.manager.LoginConfig;
-import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.util.StringUtil;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.List;
 
-public class UserAddActivity extends ActivityTool {
+public class UserAddActivity extends ActivityBase {
     Toolbar toolbar;
     EditText et_search;
     LoginConfig loginConfig;
@@ -38,7 +34,6 @@ public class UserAddActivity extends ActivityTool {
         loginConfig=getLoginConfig();
         initActionBar();
         init();
-
     }
     public void initActionBar()
     {
@@ -66,7 +61,8 @@ public class UserAddActivity extends ActivityTool {
 
     }
     public void showSoftInput() {
-        InputMethodManager inputMethodManager = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        InputMethodManager inputMethodManager = (InputMethodManager) getContext().
+                getSystemService(Context.INPUT_METHOD_SERVICE);
         inputMethodManager.showSoftInput(et_search, InputMethodManager.SHOW_IMPLICIT);
     }
     public void dosearchFriend(String username)
@@ -81,6 +77,9 @@ public class UserAddActivity extends ActivityTool {
                 case 3:
                     Toast.makeText(UserAddActivity.this,"你找的好友就是你自己哦！！",Toast.LENGTH_SHORT).show();
                     break;
+                case 4:
+                    Toast.makeText(UserAddActivity.this,"网络异常，请确认连接！",Toast.LENGTH_SHORT).show();
+                    break;
                 default:
                     Intent intent=new Intent(UserAddActivity.this,UserInfoActivity.class);
                     intent.putExtra("to",jid);
@@ -93,13 +92,13 @@ public class UserAddActivity extends ActivityTool {
         Thread userisExsit=new Thread(new Runnable() {
             @Override
             public void run() {
-                if (StringUtil.getJidByName(loginConfig.getUsername(),loginConfig.getServerName()).equals(jid))
+                if (StringUtil.getJidByName(loginConfig.getUsername(),getResources().getString(R.string.xmpp_service_name)).equals(jid))
                 {
                     Message message=new Message();
                     message.what=3;
                     handler.sendMessage(message);
                 }else {
-                    int key = IsUserOnLine(jid, getLoginConfig().getServerName());
+                    int key = IsUserOnLine(jid, getLoginConfig().getXmppIP());
                     Message message = new Message();
                     message.what = key;
                     handler.sendMessage(message);
@@ -129,7 +128,7 @@ public class UserAddActivity extends ActivityTool {
     /**
      * 判断openfire用户的状态
      *     strUrl : url格式 - http://zw:9090/plugins/presence/status?jid=zhangwei@zw&type=xml
-     *    返回值 : 0 - 用户不存在; 1 - 用户在线; 2 - 用户离线
+     *    返回值 : 0 - 用户不存在error; 1 - 用户在线priority; 2 - 用户离线unavailable
      *  说明   ：必须要求 openfire加载 presence 插件，同时设置任何人都可以访问
      */
     public static short IsUserOnLine(String userjid,String servername) {
@@ -155,7 +154,7 @@ public class UserAddActivity extends ActivityTool {
                 }
             }
         } catch (Exception e) {
-
+                return 4;
         }
 
         return shOnLineState;

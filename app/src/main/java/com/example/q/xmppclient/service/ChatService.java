@@ -40,13 +40,13 @@ public class ChatService extends Service {
 
     @Override
     public void onCreate() {
-        context = this;
         super.onCreate();
-        initChatManager();
     }
 
     @Override
     public int onStartCommand(Intent intent,int flags, int startId) {
+        context = this;
+        initChatManager();
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -168,6 +168,7 @@ public class ChatService extends Service {
                 .setContentTitle(from)
                 .setContentText(contentText)
                 .setAutoCancel(true)
+                .setDefaults(Notification.DEFAULT_ALL)
                 .build();
         notification.contentIntent=appIntent;
 		/* 送出Notification */

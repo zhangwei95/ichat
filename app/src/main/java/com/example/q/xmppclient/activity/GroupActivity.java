@@ -1,14 +1,11 @@
 package com.example.q.xmppclient.activity;
 
-import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.view.MenuItem;
 
 import com.example.q.xmppclient.R;
 
-public class GroupActivity extends AppCompatActivity {
+public class GroupActivity extends ActivityBase {
     Toolbar toolbar;
     @Override
     protected void onCreate(Bundle savedInstanceState) {

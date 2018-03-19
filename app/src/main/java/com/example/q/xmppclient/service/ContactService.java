@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import com.example.q.xmppclient.R;
 import com.example.q.xmppclient.activity.MainActivity;
@@ -33,6 +34,7 @@ import java.util.Calendar;
 import java.util.Collection;
 
 public class ContactService extends Service {
+    static String TAG="ContactService";
     private Roster roster = null;
     private Context context;
     /* 声明对象变量 */
@@ -50,6 +52,7 @@ public class ContactService extends Service {
     }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.e(TAG, "onStartCommand: ");
         init();
         return super.onStartCommand(intent, flags, startId);
     }
@@ -207,7 +210,7 @@ public class ContactService extends Service {
                         ContacterManager.contacters.get(subscriber));
                 ContacterManager.contacters.remove(subscriber);
                 ContacterManager.contacters.put(subscriber,
-                        ContacterManager.transEntryToUser(context,entry,
+                        ContacterManager.transEntryToUser(entry,
                                 XmppConnectionManager.getInstance().getConnection()));
             }
             sendBroadcast(intent);
@@ -221,7 +224,7 @@ public class ContactService extends Service {
                 // 获得状态改变的entry
                 RosterEntry userEntry = roster.getEntry(address);
                 User user = ContacterManager
-                        .transEntryToUser(context,userEntry,
+                        .transEntryToUser(userEntry,
                                 XmppConnectionManager.getInstance().getConnection());
                 if (ContacterManager.contacters.get(address) != null) {
                     // 这里发布的是更新前的user
@@ -259,7 +262,7 @@ public class ContactService extends Service {
                 intent.setAction(Constant.ROSTER_ADDED);
                 RosterEntry userEntry = roster.getEntry(address);
                 User user = ContacterManager
-                        .transEntryToUser(context,userEntry,
+                        .transEntryToUser(userEntry,
                                 XmppConnectionManager.getInstance().getConnection());
                 ContacterManager.contacters.put(address, user);
                 intent.putExtra(User.userKey, user);

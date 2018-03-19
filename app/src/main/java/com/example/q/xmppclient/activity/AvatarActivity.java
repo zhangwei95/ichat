@@ -1,42 +1,51 @@
 package com.example.q.xmppclient.activity;
 
-import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewGroup;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 
 import com.example.q.xmppclient.R;
+import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.manager.LoginConfig;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.util.FormatUtil;
+import com.example.q.xmppclient.util.StringUtil;
 
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smackx.packet.VCard;
 
-import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
-public class AvatarActivity extends ActivityTool {
+import dmax.dialog.SpotsDialog;
+
+public class AvatarActivity extends ActivityBase {
     Toolbar toolbar;
     ImageView iv_icon;
     VCard vCard;
     LoginConfig loginConfig;
+    Button btn_avatar_save;
+    AlertDialog dialog;
     private  static final  int TAKE_PHOTO=1;
     private  Uri imageUri;
     private static final int CHOOSE_PHOTO=0;
@@ -48,7 +57,14 @@ public class AvatarActivity extends ActivityTool {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         setTitle("头像");
-
+        btn_avatar_save= (Button) findViewById(R.id.btn_avatar_save);
+        btn_avatar_save.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SetVcardTask setVcardTask=new SetVcardTask();
+                setVcardTask.execute(FormatUtil.drawable2Bitmap(iv_icon.getDrawable()));
+            }
+        });
         toolbar.setOnCreateContextMenuListener(this);
         toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             Intent intent;
@@ -88,7 +104,6 @@ public class AvatarActivity extends ActivityTool {
                         startActivityForResult(intent,TAKE_PHOTO);
                                 return  true;
                         }
-                        defalut:
                 return false;
             }
         });
@@ -107,6 +122,14 @@ public class AvatarActivity extends ActivityTool {
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        byte[] image=intent.getByteArrayExtra("ClippedImage");
+        iv_icon.setImageBitmap(FormatUtil.Bytes2Bitmap(image));
+        btn_avatar_save.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -141,12 +164,24 @@ public class AvatarActivity extends ActivityTool {
             case  TAKE_PHOTO:
                 if (resultCode==RESULT_OK)
                 {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     try {
                         Bitmap bitmap= BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
-                        iv_icon.setImageBitmap(bitmap);
+
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 30, baos);
+                        byte[] datas = baos.toByteArray();
+                        Intent intent=new Intent(this,ClipActivity.class);
+                        intent.putExtra("SelectedImage",datas);
+                        startActivity(intent);
                     }catch (FileNotFoundException e)
                     {
                         e.printStackTrace();
+                    }finally {
+                        try {
+                            baos.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
                 break;
@@ -162,11 +197,114 @@ public class AvatarActivity extends ActivityTool {
                         //4.4以下系统使用这个方法处理图片  
                         bitmap = FormatUtil.handleImageBeforeKitKat(this, data);
                     }
-                    iv_icon.setImageBitmap(bitmap);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    try {
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 30, baos);
+                        byte[] datas = baos.toByteArray();
+                        Intent intent=new Intent(this,ClipActivity.class);
+                        intent.putExtra("SelectedImage",datas);
+                        startActivity(intent);
+                    }finally {
+                        try {
+                            baos.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
                 break;
             default:
                 break;
+        }
+    }
+    class SetVcardTask extends AsyncTask<Bitmap, Integer, Boolean> {
+
+
+        @Override
+        protected void onPreExecute() {
+            dialog=new SpotsDialog(context, "正在保存",R.style.Custom);
+            dialog.show();
+            super.onPreExecute();
+        }
+        @Override
+        protected Boolean doInBackground(Bitmap... param) {
+            VCard vCard = new VCard();
+            try {
+                vCard.load(XmppConnectionManager.getInstance().getConnection());
+            }catch (XMPPException e)
+            {
+                return false;
+            }
+            // 设置和更新用户信息
+            if (setAndSaveAvatar(param[0])==null) {
+                return false;
+            }else
+            {
+                vCard.setAvatar(setAndSaveAvatar(param[0]));
+            }
+            try {
+                vCard.save(XmppConnectionManager.getInstance().getConnection());
+                return true;
+            } catch (XMPPException e) {
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean bool) {
+            super.onPostExecute(bool);
+            dialog.dismiss();
+            if (bool) {
+                dialog=new SpotsDialog(context,"保存成功",R.style.Custom);
+            }else
+            {
+                dialog=new SpotsDialog(context, "保存失败",R.style.Custom);
+            }
+            dialog.show();
+            Timer timer=new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    dialog.dismiss();
+                    Intent intent = new Intent(AvatarActivity.this, MainActivity.class);
+                    intent.putExtra("action", "edit");
+                    startActivity(intent);
+                }
+            },500);
+
+        }
+
+        /**
+         * 返回头像byte数组并将新头像缓存到本地
+         */
+        private byte[] setAndSaveAvatar(Bitmap bitmap) {
+            //默认image路径
+            String imageDir = Environment.getExternalStorageDirectory()
+                    .getAbsolutePath() +
+                    AvatarActivity.this.getResources().getString(R.string.img_dir) + "/";
+            File fileDir = new File(imageDir);
+            //获取内部存储状态
+            String state = Environment.getExternalStorageState();
+            //如果状态不是mounted，无法读写
+            if (!state.equals(Environment.MEDIA_MOUNTED)) {
+                return null;
+            }
+            byte[] bytes=null;
+            //本地读文件
+            String fileName = "avatar_" + StringUtil.getJidByName
+                    (loginConfig.getUsername(), loginConfig.getServerName()) + ".png";
+            File file = new File(imageDir, fileName);
+            bytes=FormatUtil.Bitmap2Bytes(bitmap);
+            try {
+                FileOutputStream out = new FileOutputStream(file);
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                out.flush();
+                out.close();
+            }catch (IOException e)
+            {
+                return null;
+            }
+            return bytes;
         }
     }
 }

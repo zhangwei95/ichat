@@ -1,18 +1,26 @@
 package com.example.q.xmppclient.task;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.os.Environment;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.example.q.xmppclient.R;
+import com.example.q.xmppclient.activity.LoginActivity;
 import com.example.q.xmppclient.activity.MainActivity;
 import com.example.q.xmppclient.activity.IActivity;
+import com.example.q.xmppclient.activity.RegisterActivity;
 import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.db.DataBaseHelper;
 import com.example.q.xmppclient.manager.LoginConfig;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
+import com.example.q.xmppclient.util.AppUtil;
 import com.example.q.xmppclient.util.FormatUtil;
 import com.example.q.xmppclient.util.StringUtil;
 
@@ -22,6 +30,12 @@ import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smackx.packet.VCard;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Random;
 
 
@@ -29,24 +43,35 @@ import java.util.Random;
  * Created by q on 2017/10/26.
  */
 public class LoginTask extends AsyncTask<String, Integer, Integer> {
+    public static String TAG="LoginTask";
     private ProgressDialog progressDialog;
     private Context context;
     private LoginConfig loginConfig;
     private IActivity activityTool;
+    private  XmppConnectionManager xmppConnectionManager;
     private XMPPConnection xmppConnection;
+    private String imageDir ;
+    private String fileName ;
 
     public LoginTask(IActivity activityTool, LoginConfig loginConfig) {
         this.activityTool = activityTool;
         this.loginConfig = loginConfig;
         this.progressDialog = activityTool.getProgressDialog();
         this.context = activityTool.getContext();
-
+        xmppConnectionManager=XmppConnectionManager.getInstance();
+        imageDir = Environment.getExternalStorageDirectory()
+                .getAbsolutePath() +
+                activityTool.getContext().getResources().getString(R.string.img_dir)+"/";
+        fileName = "avatar_" +StringUtil.getJidByName
+                (loginConfig.getUsername(),loginConfig.getServerName())+".png";
     }
 
     @Override
     protected void onPreExecute() {
-        progressDialog.setMessage("正在登录");
-        progressDialog.show();
+        if(activityTool.getClass().equals(LoginActivity.class)) {
+            progressDialog.setMessage("正在登录");
+            progressDialog.show();
+        }
         super.onPreExecute();
     }
 
@@ -57,48 +82,12 @@ public class LoginTask extends AsyncTask<String, Integer, Integer> {
 
     @Override
     protected void onPostExecute(Integer result) {
+        if(activityTool.getClass().equals(LoginActivity.class)) {
         progressDialog.dismiss();
+        }
         switch (result) {
             case Constant.LOGIN_SUCCESS:
                 Toast.makeText(context, Constant.LOGIN_SUCCESS_MESSAGE, Toast.LENGTH_SHORT).show();
-                try {
-                    //todo 要改
-                    VCard vcard=new VCard();
-                    if (XmppConnectionManager.getInstance().getConnection().isConnected()) {
-                        vcard.load(XmppConnectionManager.getInstance().getConnection(),StringUtil.getJidByName(loginConfig.getUsername(),loginConfig.getServerName()));
-                    }else
-                    {
-                        XmppConnectionManager.getInstance().getConnection().connect();
-                        vcard.load(XmppConnectionManager.getInstance().getConnection(),StringUtil.getJidByName(loginConfig.getUsername(),loginConfig.getServerName()));
-                    }
-                    if(vcard==null||FormatUtil.empty(vcard.getNickName()))
-                    {
-                        vcard = new VCard();
-                        vcard.setNickName(loginConfig.getNickname());
-                        FormatUtil format = FormatUtil.getInstance();
-                        vcard.setAvatar(format.Drawable2Bytes(context.getResources().getDrawable(R.drawable.default_icon)));
-                        vcard.save(XmppConnectionManager.getInstance().getConnection());
-                    }
-                }catch (XMPPException e)
-                {
-                    Toast.makeText(context,"VCard生成失败",Toast.LENGTH_SHORT).show();
-                }
-                Intent intent = new Intent();
-                if (loginConfig.isFirstStart()) {
-                    //todo 首次登录动画界面
-//                    SetVcardTask setVcardTask=new SetVcardTask(loginConfig.getNickname());
-//                    setVcardTask.execute();
-                    loginConfig.setFirstStart(false);
-                    Random random=new Random();
-                    DataBaseHelper dbhelper=new DataBaseHelper(context,loginConfig.getUsername(),null,3);
-                    dbhelper.getWritableDatabase();
-                    intent.setClass(context, MainActivity.class);
-                } else {
-                    intent.setClass(context, MainActivity.class);
-                }
-                activityTool.saveLoginConfig(loginConfig);
-                activityTool.startService();
-                context.startActivity(intent);
                 break;
             case Constant.LOGIN_ERROR:
                 Toast.makeText(context,Constant.LOGIN_ERROR_MESSAGE, Toast.LENGTH_SHORT).show();
@@ -126,24 +115,33 @@ public class LoginTask extends AsyncTask<String, Integer, Integer> {
     private Integer login() {
         String username = loginConfig.getUsername();
         String password = loginConfig.getPassword();
-
         try {
+
             if (xmppConnection==null) {
                 xmppConnection = XmppConnectionManager.getInstance().getConnection();
             }
             if(!xmppConnection.isConnected())
             {
-              xmppConnection.connect();
+                xmppConnection.connect();
             }
             xmppConnection.login(username, password);
-            xmppConnection.sendPacket(new Presence(Presence.Type.available));
-            loginConfig.setUsername(username);
-            if (loginConfig.isRemember()) {
-                loginConfig.setPassword(password);
-            } else {
-                loginConfig.setPassword("");
+            //todo 是新用户则给用户创建VCard
+            if(loginConfig.isNewUser()) {
+                createNewVCardForNewUser(loginConfig);
             }
+            loginConfig.setUsername(username);
+            loginConfig.setPassword(password);
             loginConfig.setOnline(true);
+
+            if (activityTool.getClass().equals(LoginActivity.class)) {
+                loginByLoginActivity();
+            }else if (activityTool.getClass().equals(RegisterActivity.class)) {
+                loginByRegisterActivity();
+            }else if (activityTool.getClass().equals(MainActivity.class)){
+                loginByMainActivity();
+            }
+            //告诉服务器上线了
+            xmppConnection.sendPacket(new Presence(Presence.Type.available));
         } catch (Exception exc) {
             int code;
 
@@ -166,6 +164,147 @@ public class LoginTask extends AsyncTask<String, Integer, Integer> {
             return Constant.LOGIN_ERROR;
         }
         return Constant.LOGIN_SUCCESS;
+    }
+    /**
+     * 新用户VCard新建
+     */
+    private void createNewVCardForNewUser(LoginConfig loginconfig)
+    {
+        VCard vCard=new VCard();
+        vCard.setNickName(loginconfig.getNickname());
+        vCard.setAvatar(AppUtil.getDefaultAvatar(context,loginconfig));//从本地获取默认头像
+        vCard.setAddressFieldHome(Constant.COUNTRY,null);
+        vCard.setAddressFieldHome(Constant.PROVINCE,null);
+        vCard.setAddressFieldHome(Constant.CITY,null);
+        vCard.setAddressFieldHome(Constant.SIGN,null);
+        try {
+            vCard.save(xmppConnection);
+            loginConfig.setNewUser(false);
+            loginConfig.setAvatar(imageDir+fileName);
+            loginConfig.setCountry(vCard.getAddressFieldHome(Constant.COUNTRY));
+            loginConfig.setProvince(vCard.getAddressFieldHome(Constant.PROVINCE));
+            loginConfig.setCity(vCard.getAddressFieldHome(Constant.CITY));
+            loginConfig.setSign(vCard.getAddressFieldHome(Constant.SIGN));
+            activityTool.saveLoginConfig(loginconfig);
+        } catch (XMPPException e) {
+            e.printStackTrace();
+        }
+    }
+    /**
+     * loginByLoginActivity
+     */
+    private void loginByLoginActivity()
+    {
+        VCard vcard=new VCard();
+        try {
+            //todo 要改
+            if (XmppConnectionManager.getInstance().getConnection().isConnected()) {
+                vcard.load(XmppConnectionManager.getInstance().getConnection(),
+                        StringUtil.getJidByName(loginConfig.getUsername(),
+                                loginConfig.getServerName()));
+            }else
+            {
+                XmppConnectionManager.getInstance().getConnection().connect();
+                vcard.load(XmppConnectionManager.getInstance().getConnection(),
+                        StringUtil.getJidByName(loginConfig.getUsername(),
+                                loginConfig.getServerName()));
+            }
+        }catch (XMPPException e)
+        {
+            Toast.makeText(context,"VCard加载失败",Toast.LENGTH_SHORT).show();//test 加载失败
+        }
+        Intent intent = new Intent(context, MainActivity.class);
+        if (loginConfig.isFirstStart()) {
+            //todo 首次登录动画界面
+            //SetVcardTask setVcardTask=new SetVcardTask(loginConfig.getNickname());
+            //setVcardTask.execute();
+            DataBaseHelper dbhelper = new DataBaseHelper(context, loginConfig.getUsername(), null,3);
+            dbhelper.getWritableDatabase();
+            loginConfig.setFirstStart(false);
+        }
+        //todo 保存当前登录用户信息到sharepreference（头像路径、地区、签名）
+        loginConfig.setAvatar(imageDir+fileName);
+        loginConfig.setNickname(vcard.getNickName());
+        loginConfig.setProvince(vcard.getAddressFieldHome("province"));
+        loginConfig.setCity(vcard.getAddressFieldHome("city"));
+        loginConfig.setSign(vcard.getAddressFieldHome("sign"));
+        loginConfig.setCountry(vcard.getAddressFieldHome("country"));
+        activityTool.saveLoginConfig(loginConfig);
+        //缓存头像
+        AppUtil.cachedAvatarImage(context,FormatUtil.Bytes2Bitmap(vcard.getAvatar()),
+                StringUtil.getJidByName(loginConfig.getUsername(),loginConfig.getServerName()));
+        activityTool.startService();
+        context.startActivity(intent);
+    }
+    /**
+     * loginByRegisterActivity
+     */
+    private void loginByRegisterActivity() {
+        VCard vcard=new VCard();
+        try {
+            //todo 要改
+            if (XmppConnectionManager.getInstance().getConnection().isConnected()) {
+                vcard.load(XmppConnectionManager.getInstance().getConnection(),
+                        StringUtil.getJidByName(loginConfig.getUsername(),
+                                loginConfig.getServerName()));
+            }else
+            {
+                XmppConnectionManager.getInstance().getConnection().connect();
+                vcard.load(XmppConnectionManager.getInstance().getConnection(),
+                        StringUtil.getJidByName(loginConfig.getUsername(),
+                                loginConfig.getServerName()));
+            }
+        }catch (XMPPException e)
+        {
+            Toast.makeText(context,"VCard加载失败",Toast.LENGTH_SHORT).show();
+        }
+        Intent intent = new Intent(context, MainActivity.class);
+        if (loginConfig.isFirstStart()) {
+            //todo 首次登录动画界面
+            //SetVcardTask setVcardTask=new SetVcardTask(loginConfig.getNickname());
+            //setVcardTask.execute();
+            DataBaseHelper dbhelper = new DataBaseHelper(context, loginConfig.getUsername(), null,3);
+            dbhelper.getWritableDatabase();
+            loginConfig.setFirstStart(false);
+            activityTool.saveLoginConfig(loginConfig);
+        }
+        activityTool.startService();
+        //缓存头像
+        AppUtil.cachedAvatarImage(context,FormatUtil.Bytes2Bitmap(vcard.getAvatar()),
+                StringUtil.getJidByName(loginConfig.getUsername(),loginConfig.getServerName()));
+        context.startActivity(intent);
+    }
+
+    /**
+     * loginByMainActivity
+     */
+    private void loginByMainActivity() {
+        VCard vcard=new VCard();
+        try {
+            //todo 要改
+            if (XmppConnectionManager.getInstance().getConnection().isConnected()) {
+                vcard.load(XmppConnectionManager.getInstance().getConnection(),
+                        StringUtil.getJidByName(loginConfig.getUsername(),
+                                loginConfig.getServerName()));
+            }else
+            {
+                XmppConnectionManager.getInstance().getConnection().connect();
+                vcard.load(XmppConnectionManager.getInstance().getConnection(),
+                        StringUtil.getJidByName(loginConfig.getUsername(),
+                                loginConfig.getServerName()));
+            }
+        }catch (XMPPException e)
+        {
+            Toast.makeText(context,"VCard加载失败",Toast.LENGTH_SHORT).show();
+        }
+        loginConfig.setAvatar(imageDir+fileName);
+        loginConfig.setNickname(vcard.getNickName());
+        loginConfig.setProvince(vcard.getAddressFieldHome("province"));
+        loginConfig.setCity(vcard.getAddressFieldHome("city"));
+        loginConfig.setSign(vcard.getAddressFieldHome("sign"));
+        loginConfig.setCountry(vcard.getAddressFieldHome("country"));
+        activityTool.saveLoginConfig(loginConfig);
+        activityTool.startService();
     }
 }
 /**

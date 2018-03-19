@@ -27,7 +27,7 @@ import com.example.q.xmppclient.util.CrashHandler;
  * Created by q on 2017/10/26.
  */
 
-public class ActivityTool extends AppCompatActivity implements IActivity {
+public class ActivityBase extends AppCompatActivity implements IActivity {
 
 
     protected ProgressDialog progressDialog;
@@ -40,8 +40,8 @@ public class ActivityTool extends AppCompatActivity implements IActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        CrashHandler crashHandler = CrashHandler.getInstance();
-        crashHandler.init(getApplicationContext());
+//        CrashHandler crashHandler = CrashHandler.getInstance();
+//        crashHandler.init(getApplicationContext());
         context=this;
         sharedPreferences=getSharedPreferences(Constant.LOGIN_SET,MODE_PRIVATE);
         Editer=sharedPreferences.edit();
@@ -132,6 +132,12 @@ public class ActivityTool extends AppCompatActivity implements IActivity {
         Editer.putBoolean(Constant.IS_FIRSTSTART,loginConfig.isFirstStart());
         Editer.putBoolean(Constant.IS_ONLINE,loginConfig.isOnline());
         Editer.putBoolean(Constant.IS_NEW_USER,loginConfig.isNewUser());
+        Editer.putString(Constant.NICKNAME,loginConfig.getNickname());
+        Editer.putString(Constant.AVATAR,loginConfig.getAvatar());
+        Editer.putString(Constant.COUNTRY,loginConfig.getCountry());
+        Editer.putString(Constant.PROVINCE,loginConfig.getProvince());
+        Editer.putString(Constant.CITY,loginConfig.getCity());
+        Editer.putString(Constant.SIGN,loginConfig.getSign());
         Editer.apply();
     }
 
@@ -142,11 +148,14 @@ public class ActivityTool extends AppCompatActivity implements IActivity {
     @Override
     public LoginConfig getLoginConfig() {
         LoginConfig loginConfig = new LoginConfig();
-        loginConfig.setXmppIP( sharedPreferences.getString(Constant.XMPP_HOST,getResources().getString(R.string.xmpp_host)));
-        loginConfig.setXmppPort(sharedPreferences.getInt(Constant.XMPP_PORT,getResources().getInteger(R.integer.xmpp_port)));
+        loginConfig.setXmppIP(sharedPreferences.getString(Constant.XMPP_HOST,
+                getResources().getString(R.string.xmpp_host)));
+        loginConfig.setXmppPort(sharedPreferences.getInt(Constant.XMPP_PORT,
+                getResources().getInteger(R.integer.xmpp_port)));
         loginConfig.setUsername(sharedPreferences.getString(Constant.USERNAME,null));
         loginConfig.setPassword(sharedPreferences.getString(Constant.PASSWORD,null));
-        loginConfig.setServerName(sharedPreferences.getString(Constant.XMPP_SEIVICE_NAME,getResources().getString(R.string.xmpp_service_name)));
+        loginConfig.setServerName(sharedPreferences.getString(Constant.XMPP_SEIVICE_NAME,
+                getResources().getString(R.string.xmpp_service_name)));
         loginConfig.setAutoLogin(sharedPreferences.getBoolean(Constant.IS_AUTOLOGIN,
                 getResources().getBoolean(R.bool.is_autologin)));
         loginConfig.setRemember(sharedPreferences.getBoolean(Constant.IS_REMEMBER,
@@ -155,6 +164,12 @@ public class ActivityTool extends AppCompatActivity implements IActivity {
                 Constant.IS_FIRSTSTART, true));
         loginConfig.setNewUser(sharedPreferences.getBoolean(
                 Constant.IS_NEW_USER, false));
+        loginConfig.setNickname(sharedPreferences.getString(Constant.NICKNAME,null));
+        loginConfig.setCountry(sharedPreferences.getString(Constant.COUNTRY,null));
+        loginConfig.setAvatar(sharedPreferences.getString(Constant.AVATAR,null));
+        loginConfig.setProvince(sharedPreferences.getString(Constant.PROVINCE,null));
+        loginConfig.setCity(sharedPreferences.getString(Constant.CITY,null));
+        loginConfig.setSign(sharedPreferences.getString(Constant.SIGN,null));
         return loginConfig;
     }
     /**
@@ -162,20 +177,21 @@ public class ActivityTool extends AppCompatActivity implements IActivity {
      */
     public void isExit()
     {
-        new AlertDialog.Builder(context).setTitle("退出程序").setMessage("确定退出吗?")
-                .setNeutralButton("确定", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        stopService();
-                        appManager.exit();
-                    }
-                })
-                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                }).show();
+        appManager.exit();
+//        new AlertDialog.Builder(context).setTitle("退出程序").setMessage("确定退出吗?")
+//                .setNeutralButton("确定", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        stopService();
+//                        appManager.exit();
+//                    }
+//                })
+//                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        dialog.cancel();
+//                    }
+//                }).show();
     }
 
     /**

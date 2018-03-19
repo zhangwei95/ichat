@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 定义一个名字叫ClipImageLayout属性集合,name往往跟对应的View的类名一致 -->
+    <declare-styleable name="ClipImageLayout">
+
+        <!--定义一个类型为integer,名字叫HorizontalPadding的属性  -->
+        <!--<attr name="HorizontalPadding" format="dimension"/>-->
+
+        <!--定义一个类型为reference和color（这样背景可以通过R引用，
+          也可以使用图片资源）,名字叫Drawable的属性  -->
+        <attr name="Drawable" format="reference|color"/>
+    </declare-styleable>
+</resources>

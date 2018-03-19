@@ -1,20 +1,15 @@
 package com.example.q.xmppclient.activity;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.q.xmppclient.R;
-import com.example.q.xmppclient.entity.User;
-import com.example.q.xmppclient.manager.ContacterManager;
-import com.example.q.xmppclient.manager.XmppConnectionManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -22,7 +17,7 @@ import org.json.JSONObject;
 import cn.smssdk.EventHandler;
 import cn.smssdk.SMSSDK;
 
-public class PhoneCheckActivity extends ActivityTool {
+public class PhoneCheckActivity extends ActivityBase {
 
     EditText et_yanzhengma;
     EditText et_phone;

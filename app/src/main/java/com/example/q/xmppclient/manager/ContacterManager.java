@@ -13,6 +13,7 @@ import com.example.q.xmppclient.R;
 import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.db.DBManager;
 import com.example.q.xmppclient.db.SQLiteTemplate;
+import com.example.q.xmppclient.entity.ChatRecordInfo;
 import com.example.q.xmppclient.entity.Notice;
 import com.example.q.xmppclient.entity.User;
 import com.example.q.xmppclient.util.FormatUtil;
@@ -35,6 +36,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -64,12 +66,17 @@ public class ContacterManager {
                         getUserByJidSql(entry.getUser()));
             } else {
                 User user;
-                user = transEntryToUser(context, entry, connection);
-                String imageDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/ichat/images/";
+                user = transEntryToUser(entry, connection);
+                String imageDir = Environment.getExternalStorageDirectory()
+                        .getAbsolutePath() +"/ichat/images/";
                 ContentValues values = new ContentValues();
-                values.put("jid", user.getJid());
-                values.put("nickname", user.getNickName());
-                values.put("avatar", imageDir + "avatar_" + user.getJid() + ".png");
+                values.put(Constant.JID, user.getJid());
+                values.put(Constant.NICKNAME, user.getNickName());
+                values.put(Constant.AVATAR, imageDir + "avatar_" + user.getJid() + ".png");
+                values.put(Constant.COUNTRY,user.getCountry());
+                values.put(Constant.PROVINCE,user.getProvince());
+                values.put(Constant.CITY,user.getCity());
+                values.put(Constant.SIGN,user.getSign());
                 st.insert("im_contactors", values);
                 File dirfile = new File(imageDir);
                 //获取内部存储状态
@@ -103,7 +110,7 @@ public class ContacterManager {
      *
      * @param userJId
      */
-    public static User getByUserJid(Context context,String userJId, XMPPConnection connection) {
+    public static User getByUserJid(String userJId, XMPPConnection connection) {
         Roster roster = connection.getRoster();
         RosterEntry entry = connection.getRoster().getEntry(userJId);
         if (null == entry) {
@@ -123,26 +130,15 @@ public class ContacterManager {
             vCard.load(XmppConnectionManager.getInstance().getConnection(),userJId);
             user.setNickName(vCard.getNickName());
             user.setVCard(vCard);
-            FormatUtil format=FormatUtil.getInstance();
+            user.setProvince(vCard.getAddressFieldHome(Constant.PROVINCE));
+            user.setCity(vCard.getAddressFieldHome(Constant.CITY));
+            user.setSign(vCard.getAddressFieldHome(Constant.SIGN));
+            user.setCountry(vCard.getAddressFieldHome(Constant.COUNTRY));
             user.setIcon(FormatUtil.Bytes2Bitmap(vCard.getAvatar()));
-//            if(vCard==null||vCard.getAvatar()==null)
-//            {
-//                user.setIcon(context.getResources().getDrawable(R.drawable.icon));
-//            }else
-//            {
-//                ByteArrayInputStream bais = new ByteArrayInputStream(vCard.getAvatar());
-//                FormatUtil format=FormatUtil.getInstance();
-//                user.setIcon(format.InputStream2Drawable(bais));
-//            }
         }catch (XMPPException e)
         {
             e.printStackTrace();
         }
-//        user.setFrom(presence.getFrom());
-//        user.setStatus(presence.getStatus());
-//        user.setSize(entry.getGroups().size());
-//        user.setAvailable(presence.isAvailable());
-//        user.setType(entry.getType());
         return user;
 
     }
@@ -156,13 +152,52 @@ public class ContacterManager {
      * @return
      */
     public static List<User> getContacterList() {
-        if (contacters == null)
-            throw new RuntimeException("contacters is null");
-
         List<User> userList = new ArrayList<User>();
+        if (contacters == null ||contacters.size()==0) {
+            userList=getContacterFromLocal();
+            return userList;
+        }
 
         for (String key : contacters.keySet())
             userList.add(contacters.get(key));
+
+
+        return userList;
+    }
+
+    /**
+     * 本地获取contacters
+     * @return
+     */
+    public static List<User> getContacterFromLocal()
+    {
+        SQLiteTemplate st = SQLiteTemplate.getInstance(manager, false);
+        List<User> userList = st
+                .queryForList(
+                        new SQLiteTemplate.RowMapper<User>() {
+
+                            @Override
+                            public User mapRow(Cursor cursor, int index) {
+                                User user = new User();
+                                user.setJid(cursor.getString(cursor
+                                        .getColumnIndex(Constant.JID)));
+                                user.setNickName(cursor.getString(cursor
+                                        .getColumnIndex(Constant.NICKNAME)));
+                                user.setIcon(getBitmapFromAvatar(cursor.getString(cursor
+                                        .getColumnIndex(Constant.AVATAR))));
+                                user.setCountry(cursor.getString(cursor
+                                        .getColumnIndex(Constant.COUNTRY)));
+                                user.setProvince(cursor.getString(cursor
+                                        .getColumnIndex(Constant.PROVINCE)));
+                                user.setCity(cursor.getString(cursor
+                                        .getColumnIndex(Constant.CITY)));
+                                user.setSign(cursor.getString(cursor
+                                        .getColumnIndex(Constant.SIGN)));
+                                return user;
+                            }
+                        },
+                        "select * from im_contactors",
+                        null);
 
         return userList;
     }
@@ -210,7 +245,7 @@ public class ContacterManager {
      * @param entry
      * @return
      */
-    public static User transEntryToUser(Context context,RosterEntry entry,XMPPConnection connection) {
+    public static User transEntryToUser(RosterEntry entry,XMPPConnection connection) {
         User user = new User();
         if (entry.getName() == null) {
             user.setUsername(StringUtil.getUserNameByJid(entry.getUser()));
@@ -220,7 +255,7 @@ public class ContacterManager {
         user.setJid(entry.getUser());
         System.out.println(entry.getUser());
         Presence presence = connection.getRoster().getPresence(entry.getUser());
-        user=getByUserJid(context,entry.getUser(),connection);
+        user=getByUserJid(entry.getUser(),connection);
 //        user.setFrom(presence.getFrom());
 //        user.setStatus(presence.getStatus());
 //        user.setSize(entry.getGroups().size());
@@ -429,11 +464,20 @@ public class ContacterManager {
             @Override
             public User mapRow(Cursor cursor, int index) {
                 User user = new User();
-                user.setJid(cursor.getString(cursor.getColumnIndex("jid")));
+                user.setJid(cursor.getString(cursor
+                        .getColumnIndex(Constant.JID)));
                 user.setNickName(cursor.getString(cursor
-                        .getColumnIndex("nickname")));
+                        .getColumnIndex(Constant.NICKNAME)));
+                user.setCountry(cursor.getString(cursor
+                        .getColumnIndex(Constant.COUNTRY)));
+                user.setProvince(cursor.getString(cursor
+                        .getColumnIndex(Constant.PROVINCE)));
+                user.setCity(cursor.getString(cursor
+                        .getColumnIndex(Constant.CITY)));
+                user.setSign(cursor.getString(cursor
+                        .getColumnIndex(Constant.SIGN)));
                 try {
-                    File avatar=new File(cursor.getString(cursor.getColumnIndex("avatar")));
+                    File avatar=new File(cursor.getString(cursor.getColumnIndex(Constant.AVATAR)));
                     FileInputStream stream = new FileInputStream(avatar);
                     Bitmap bitmap = BitmapFactory.decodeStream(stream);
                     stream.close();
@@ -447,6 +491,20 @@ public class ContacterManager {
             }
 
         }, "select * from im_contactors where jid=?", new String[] { Jid });
+    }
+    public static Bitmap getBitmapFromAvatar(String avatar) {
+        try {
+            File avatarFile=new File(avatar);
+            FileInputStream stream = new FileInputStream(avatarFile);
+            Bitmap bitmap = BitmapFactory.decodeStream(stream);
+            stream.close();
+            FormatUtil formatUtil=FormatUtil.getInstance();
+            return bitmap;
+        }catch (IOException e)
+        {
+            //todo 不存在图片
+        }
+        return null;
     }
 
 

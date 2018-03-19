@@ -1,7 +1,6 @@
 package com.example.q.xmppclient.activity;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -12,23 +11,17 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.example.q.xmppclient.R;
-import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.manager.LoginConfig;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
-import com.example.q.xmppclient.service.ChatService;
 import com.example.q.xmppclient.task.LoginTask;
 import com.example.q.xmppclient.util.ValidataUtil;
 
-import java.util.HashMap;
-
-import cn.smssdk.EventHandler;
-import cn.smssdk.SMSSDK;
-import cn.smssdk.gui.RegisterPage;
-
-public class LoginActivity extends ActivityTool {
-    private Button btn_login,btn_register;
+public class LoginActivity extends ActivityBase {
+    private Button btn_login;
+    private TextView btn_register;
     private EditText et_username,et_password;
     private CheckBox cb_isRemember,cb_isAutoLogin;
     private LoginConfig loginConfig;
@@ -92,7 +85,6 @@ public class LoginActivity extends ActivityTool {
 
     protected void  init() {
         loginConfig = getLoginConfig();
-        XmppConnectionManager.getInstance().init(loginConfig);
         if (loginConfig.isAutoLogin()) {
             LoginTask loginTask = new LoginTask(LoginActivity.this, loginConfig);
             loginTask.execute();
@@ -100,13 +92,19 @@ public class LoginActivity extends ActivityTool {
         //实例化各组件
         et_username = (EditText) findViewById(R.id.editText_userName);
         et_password = (EditText) findViewById(R.id.editText_password);
+        et_username.setText("zhangwei");
+        et_password.setText("zhangwei");
         cb_isRemember = (CheckBox) findViewById(R.id.cb_isRemember);
         cb_isAutoLogin = (CheckBox) findViewById(R.id.cb_isAutoLogin);
         btn_login = (Button) findViewById(R.id.btn_login);
-        btn_register = (Button) findViewById(R.id.btn_register);
+        btn_register = (TextView) findViewById(R.id.btn_register);
         //设置各组件默认状态
         et_username.setText(loginConfig.getUsername());
-        et_password.setText(loginConfig.getPassword());
+        if(loginConfig.isRemember()) {
+            et_password.setText(loginConfig.getPassword());
+        }else {
+            et_password.setText("");
+        }
         cb_isRemember.setChecked(loginConfig.isRemember());
         cb_isRemember.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -126,13 +124,10 @@ public class LoginActivity extends ActivityTool {
                     // 先记录下各组件的目前状态,登录成功后才保存
                     loginConfig.setPassword(password);
                     loginConfig.setUsername(username);
-                    loginConfig.setXmppIP(getResources().getString(R.string.xmpp_host));
-                    loginConfig.setServerName(getResources().getString(R.string.xmpp_service_name));
                     loginConfig.setRemember(cb_isRemember.isChecked());
                     loginConfig.setAutoLogin(cb_isAutoLogin.isChecked());
                     LoginTask loginTask = new LoginTask(LoginActivity.this, loginConfig);
                     loginTask.execute();
-
             }
         });
         btn_register.setOnClickListener(new View.OnClickListener() {

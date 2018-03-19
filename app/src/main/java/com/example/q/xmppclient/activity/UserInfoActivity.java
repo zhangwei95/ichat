@@ -19,6 +19,7 @@ import com.example.q.xmppclient.manager.ContacterManager;
 import com.example.q.xmppclient.manager.MessageManager;
 import com.example.q.xmppclient.manager.NoticeManager;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
+import com.example.q.xmppclient.util.AppUtil;
 import com.example.q.xmppclient.util.FormatUtil;
 import com.example.q.xmppclient.util.StringUtil;
 
@@ -31,7 +32,7 @@ import org.jivesoftware.smackx.packet.VCard;
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Method;
 
-public class UserInfoActivity extends ActivityTool implements View.OnClickListener{
+public class UserInfoActivity extends ActivityBase implements View.OnClickListener{
     Toolbar toolbar;
     Button btn_sendMsg;
     Button btn_video;
@@ -41,6 +42,8 @@ public class UserInfoActivity extends ActivityTool implements View.OnClickListen
     ImageView iv_icon;
     TextView tv_nickname;
     TextView tv_username;
+    TextView tv_userinfo_address;
+    TextView tv_userinfo_sign;
     Notice notice;
     int isFriend=2;// 1、好友 2、非好友 3、请求为好友
     User user;
@@ -53,6 +56,7 @@ public class UserInfoActivity extends ActivityTool implements View.OnClickListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_info);
+        user=new User();
         initActionBar();
         initUserInfo();
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -131,6 +135,8 @@ public class UserInfoActivity extends ActivityTool implements View.OnClickListen
         iv_icon=(ImageView)findViewById(R.id.userinfo_iv_icon);
         tv_nickname=(TextView)findViewById(R.id.userinfo_tv_nickname);
         tv_username=(TextView)findViewById(R.id.userinfo_tv_username);
+        tv_userinfo_address= (TextView) findViewById(R.id.tv_userinfo_address);
+        tv_userinfo_sign= (TextView) findViewById(R.id.tv_userinfo_sign);
         btn_sendMsg=(Button)findViewById(R.id.userinfo_btn_sendMsg);
         btn_video=(Button)findViewById(R.id.userinfo_btn_video);
         btn_addFriend=(Button)findViewById(R.id.userinfo_btn_addFriend);
@@ -140,6 +146,7 @@ public class UserInfoActivity extends ActivityTool implements View.OnClickListen
         btn_addFriend.setOnClickListener(this);
         btn_PassCheck.setOnClickListener(this);
         btn_denyCheck.setOnClickListener(this);
+        btn_video.setOnClickListener(this);
         //判断启动形式
         if(getIntent().getSerializableExtra("notice")!=null)//点通知进来的
         {
@@ -147,11 +154,11 @@ public class UserInfoActivity extends ActivityTool implements View.OnClickListen
             jid=notice.getFrom();
             if(notice.getNoticeType()==notice.ADD_FRIEND)
             {
-                if(!existFriend(jid))//还没添加的好友
-                {
+                //还没添加的好友
+                if(!existFriend(jid)){
                     isFriend=3;
-                }else//添加了的好友
-                {
+                }else {
+                    //添加了的好友
                     isFriend=1;
                 }
             }
@@ -159,45 +166,51 @@ public class UserInfoActivity extends ActivityTool implements View.OnClickListen
         else
         {
             jid=getIntent().getStringExtra("to");
-            if (!existFriend(jid))//不是点通知进来的，不是好友
-            {
+            //不是点通知进来的，不是好友
+            if (!existFriend(jid)) {
                 isFriend=2;
-            }else if(existFriend(jid))//是好友
-            {
+            }else if(existFriend(jid)) {//是好友
                 isFriend=1;
+
             }
         }
-        VCard vcard;
-        try {
-            vcard = new VCard();
-            vcard.load(XmppConnectionManager.getInstance().getConnection(),jid);
-            tv_username.setText("IChatNo:"+ StringUtil.getUserNameByJid(jid));
-            if (vcard==null)
-            {
-                iv_icon.setImageResource(R.drawable.default_icon);
-                tv_nickname.setText(StringUtil.getUserNameByJid(jid));
-            }else
-            {
-                if(vcard.getAvatar()==null)
-                {
-                    iv_icon.setImageResource(R.drawable.default_icon);
-                }
-                else
-                {
-                    ByteArrayInputStream bais = new ByteArrayInputStream(vcard.getAvatar());
-                    iv_icon.setImageDrawable(FormatUtil.getInstance().InputStream2Drawable(bais));
-                }
-                if(vcard.getNickName()==null)
-                {
-                    tv_nickname.setText(StringUtil.getUserNameByJid(jid));
-                }else
-                {
-                    tv_nickname.setText(vcard.getNickName());
-                }
+        if(isFriend==1){
+            user=ContacterManager.getUserByJidSql(jid);
+        }else{
+            VCard vcard=null;
+            try {
+                vcard = new VCard();
+                vcard.load(XmppConnectionManager.getInstance().getConnection(),jid);
+                user.setNickName(vcard.getNickName());
+                user.setIcon(FormatUtil.Bytes2Bitmap(vcard.getAvatar()));
+                //更新本地好友头像
+                //todo 可以对im_contactors的表结构更改，添加好友个信息字段然后保存到本地数据库
+                AppUtil.cachedAvatarImage(this,FormatUtil.Bytes2Bitmap(vcard.getAvatar()),jid);
+                user.setProvince(vcard.getAddressFieldHome("province"));
+                user.setCity(vcard.getAddressFieldHome("city"));
+                user.setSign(vcard.getAddressFieldHome("sign"));
+                user.setCountry(vcard.getAddressFieldHome("country"));
+            }catch (XMPPException e) {
+            //todo 异步更新好友信息
+                Toast.makeText(this,"请检查网络连接~",Toast.LENGTH_SHORT).show();
             }
-        }catch (XMPPException e) {
-            e.printStackTrace();
         }
+        iv_icon.setImageBitmap(user.getIcon());
+        tv_username.setText("IChatNo:" + StringUtil.getUserNameByJid(jid));
+        tv_nickname.setText(user.getNickName());
+        if(StringUtil.empty(user.getCountry())){
+            tv_userinfo_address.setText("该用户是黑户！");
+        } else if ("中国".equals(user.getCountry())) {
+            tv_userinfo_address.setText(user.getProvince() + " " + user.getCity());
+        } else {
+            tv_userinfo_address.setText(user.getCountry());
+        }
+        if (StringUtil.empty(user.getSign())){
+            tv_userinfo_sign.setText("该用户暂未设置心情！");
+        }else{
+            tv_userinfo_sign.setText(user.getSign());
+        }
+
         //按钮显示类型
         switch (isFriend)
         {
@@ -224,7 +237,6 @@ public class UserInfoActivity extends ActivityTool implements View.OnClickListen
             switch (v.getId()) {
                 case R.id.userinfo_btn_addFriend:
                     try {
-
                         sendSubscribe(Presence.Type.subscribed, jid);
                         sendSubscribe(Presence.Type.subscribe, jid);
                         XmppConnectionManager.getInstance().getConnection().getRoster()
@@ -265,7 +277,9 @@ public class UserInfoActivity extends ActivityTool implements View.OnClickListen
                     intentAllow.putExtra("to", jid);
                     startActivity(intentAllow);
                     break;
-
+                case R.id.userinfo_btn_video:
+                    Toast.makeText(this,"本功能暂未实现，敬请期待",Toast.LENGTH_SHORT).show();
+                    break;
                 case R.id.userinfo_btn_denyCheck:
                     sendSubscribe(Presence.Type.unsubscribe,jid);
                     Intent intentDeny=new Intent(this,MainActivity.class);

@@ -76,7 +76,7 @@ public class MessageListAdapter extends BaseAdapter {
             convertView = this.inflater.inflate(
                     R.layout.layout_chat_in, null);
             if(user==null) {
-                user = ContacterManager.getByUserJid(context, message.getFromSubJid(), XmppConnectionManager.getInstance().getConnection());
+                user = ContacterManager.getUserByJidSql(message.getFromSubJid());
             }
             ImageView userIcon=(ImageView)convertView
                     .findViewById(R.id.iv_Chat_UserIcon);

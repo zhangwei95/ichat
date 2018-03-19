@@ -51,6 +51,16 @@ public class Constant {
     public static final String IS_ONLINE="isOnline";//是否在线
     public static final String IS_NEW_USER="isNewUser";//是不是新用户
 
+
+    //im_contactors 表列名
+    public static final String JID = "jid";// 所有好友
+    public static final String NICKNAME = "nickname";// 昵称
+    public static final String COUNTRY = "country";// 国家
+    public static final String PROVINCE = "province";// 省份
+    public static final String CITY = "city";// 城市
+    public static final String SIGN = "sign";// 签名
+    public static final String AVATAR = "avatar";// 签名
+
     /**
      * 登录结果result
      */
@@ -148,5 +158,6 @@ public class Constant {
      */
     public static final String ALL_FRIEND = "所有好友";// 所有好友
     public static final String NO_GROUP_FRIEND = "未分组好友";// 所有好友
+
 
 }

@@ -1,28 +1,17 @@
 package com.example.q.xmppclient.activity;
 
-import android.Manifest;
-import android.animation.TypeConverter;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Picture;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.FileProvider;
 import android.support.v4.view.ViewPager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -32,9 +21,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -47,10 +33,7 @@ import com.example.q.xmppclient.adapter.NoticeAdapter;
 import com.example.q.xmppclient.adapter.RecentChatAdapter;
 import com.example.q.xmppclient.adapter.ViewPagerAdapter;
 import com.example.q.xmppclient.common.Constant;
-import com.example.q.xmppclient.db.DataBaseHelper;
-import com.example.q.xmppclient.db.SQLiteTemplate;
 import com.example.q.xmppclient.entity.ChatRecordInfo;
-import com.example.q.xmppclient.entity.FriendList;
 import com.example.q.xmppclient.R;
 import com.example.q.xmppclient.entity.Notice;
 import com.example.q.xmppclient.entity.User;
@@ -65,42 +48,33 @@ import com.example.q.xmppclient.util.BottomNavigationViewHelper;
 import com.example.q.xmppclient.util.DateUtil;
 import com.example.q.xmppclient.util.FormatUtil;
 import com.example.q.xmppclient.util.StringUtil;
-import com.example.q.xmppclient.util.ValidataUtil;
 
-import org.jivesoftware.smack.Roster;
-import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.packet.VCard;
-import org.jivesoftware.smackx.provider.VCardProvider;
-import org.jivesoftware.smackx.pubsub.EventElement;
-import org.jivesoftware.smackx.pubsub.GetItemsRequest;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Date;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class MainActivity extends ActivityTool {
+public class MainActivity extends ActivityBase {
 
     //common
     public static User sendMsgTo;
     Toolbar toolbar;
-    public static LoginConfig loginConfig;
+    public LoginConfig loginConfig;
     public static User currentUser;//当前登录的用户
     myViewPager viewpager;
     BottomNavigationView navigation;
     private MenuItem menuItem;
     private long startTime=0;//保存第一次点击返回键的时间
     private MessageManager messageMgr;
+    private XmppConnectionManager xmppConnectionManager;
     private XMPPConnection xmppConnection;
     private NoticeManager noticeManager;
 
@@ -113,8 +87,8 @@ public class MainActivity extends ActivityTool {
     View FriendListView;
     private LinearLayout friendListll;
     private ListView friendListView;
-    private LinearLayout useraddll;
-    private LinearLayout groupll;
+    private LinearLayout ll_useradd;
+    private LinearLayout ll_groupadd;
     private FriendAdapter friendadapter;
 
     //RecentChat
@@ -132,20 +106,21 @@ public class MainActivity extends ActivityTool {
 
     @Override
     protected void onPause() {
-
-
         super.onPause();
     }
 
     @Override
     protected void onDestroy() {
-        // 卸载广播接收器
-        unregisterReceiver(receiver);
+        // 卸载广播接收器,创建
+        if(receiver!=null) {
+            unregisterReceiver(receiver);
+        }
         super.onDestroy();
     }
 
     @Override
     protected void onResume() {
+        initPersonInfo();
         inviteNotices = new ArrayList<ChatRecordInfo>();
 //        for(Notice item : noticeManager.getNoticeListByTypeAndPage(Notice.UNREAD))
 //        {
@@ -201,6 +176,11 @@ public class MainActivity extends ActivityTool {
         viewList.add(ChatRecentView);
         viewList.add(FriendListView);
         viewList.add(PersonalInfoView);
+        navigation = (BottomNavigationView) findViewById(R.id.navigation);
+
+        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        //默认 >3 的选中效果会影响ViewPager的滑动切换时的效果，故利用反射去掉
+        BottomNavigationViewHelper.disableShiftMode(navigation);
         viewpager.setAdapter(new ViewPagerAdapter(viewList));
         viewpager.setCurrentItem(0);
         viewpager.setPageTransformer(true, new DepthPageTransformer());
@@ -219,6 +199,18 @@ public class MainActivity extends ActivityTool {
                 }
                 menuItem = navigation.getMenu().getItem(position);
                 menuItem.setChecked(true);
+                switch (position) {
+                    case 0:
+                        toolbar.setTitle("ICHAT");
+                        break;
+                    case 1:
+                        toolbar.setTitle("好友");
+                        break;
+                    case 2:
+                        toolbar.setTitle("个人信息");
+                        break;
+                }
+
             }
 
             @Override
@@ -270,7 +262,19 @@ public class MainActivity extends ActivityTool {
                 switch (item.getItemId()) {
                     case R.id.relogin:
                         Intent reloginIntent = new Intent(context, LoginActivity.class);
+                        loginConfig.setUsername("");
+                        loginConfig.setPassword("");
+                        loginConfig.setAutoLogin(false);
+                        saveLoginConfig(loginConfig);
                         startActivity(reloginIntent);
+                        loginConfig=new LoginConfig();
+                        loginConfig.setServerName(getResources().
+                                getString(R.string.xmpp_service_name));
+                        loginConfig.setXmppPort(getResources().getInteger(R.integer.xmpp_port));
+                        loginConfig.setXmppIP(getResources().getString(R.string.xmpp_host));
+                        saveLoginConfig(loginConfig);
+                        XmppConnectionManager.disconnect();
+                        finish();
                         break;
                 }
                 return true;    //返回为true
@@ -298,40 +302,10 @@ public class MainActivity extends ActivityTool {
                 startActivity(intent);
             }
         });
-        useraddll = (LinearLayout) FriendListView.findViewById(R.id.ll_useradd);
-        groupll = (LinearLayout) FriendListView.findViewById(R.id.ll_groupadd);
-        useraddll.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    useraddll.setBackgroundColor(getResources().getColor(R.color.gary));
-
-                }
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    useraddll.setBackground(getResources().getDrawable(R.drawable.border_bg));
-                    Intent intent = new Intent(MainActivity.this, UserAddActivity.class);
-                    startActivity(intent);
-
-                }
-                return true;
-            }
-        });
-        groupll.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    groupll.setBackgroundColor(getResources().getColor(R.color.gary));
-
-                }
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    groupll.setBackground(getResources().getDrawable(R.drawable.border_bg));
-                    Intent intent = new Intent(MainActivity.this, GroupActivity.class);
-                    startActivity(intent);
-
-                }
-                return true;
-            }
-        });
+        ll_useradd = (LinearLayout) FriendListView.findViewById(R.id.ll_useradd);
+        ll_groupadd = (LinearLayout) FriendListView.findViewById(R.id.ll_groupadd);
+        ll_useradd.setOnTouchListener(touch);
+        ll_groupadd.setOnTouchListener(touch);
     }
 
     /**
@@ -361,8 +335,7 @@ public class MainActivity extends ActivityTool {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ChatRecordInfo chatRecordInfo = (ChatRecordInfo) parent.getItemAtPosition(position);
-                User user = ContacterManager.getByUserJid(MainActivity.this,
-                        chatRecordInfo.getFrom(),xmppConnection);
+                User user = ContacterManager.getUserByJidSql(chatRecordInfo.getFrom());
                 if (user == null) {
                     chatRecordInfo.setNoticeSum(0);
                     createChat(chatRecordInfo.getFrom());
@@ -402,6 +375,7 @@ public class MainActivity extends ActivityTool {
      * @author zw
      */
     public void initPersonInfo() {
+        loginConfig=getLoginConfig();
         currentUser = new User();
         image = (ImageView) PersonalInfoView.findViewById(R.id.test_icon);
         tv_nickname = (TextView) PersonalInfoView.findViewById(R.id.tv_nickname);
@@ -413,49 +387,50 @@ public class MainActivity extends ActivityTool {
         ll_user = (LinearLayout) PersonalInfoView.findViewById(R.id.ll_user);
         ll_place = (LinearLayout) PersonalInfoView.findViewById(R.id.ll_place);
         ll_sign = (LinearLayout) PersonalInfoView.findViewById(R.id.ll_sign);
-//        ll_icon.setOnClickListener(touch);
-//        ll_nick.setOnClickListener(touch);
-//        ll_user.setOnClickListener(touch);
-//        ll_place.setOnClickListener(touch);
-//        ll_sign.setOnClickListener(touch);
         ll_icon.setOnTouchListener(touch);
         ll_nick.setOnTouchListener(touch);
         ll_user.setOnTouchListener(touch);
         ll_place.setOnTouchListener(touch);
         ll_sign.setOnTouchListener(touch);
-        try {
-            VCard vCard = new VCard();
-            currentUser.setJid(StringUtil.getJidByName(loginConfig.getUsername(),
+        currentUser.setJid(StringUtil.getJidByName(loginConfig.getUsername(),
                     loginConfig.getServerName()));
-            vCard.load(xmppConnection, currentUser.getJid());
-            if (vCard != null) {
-                currentUser.setVCard(vCard);
-            }
-            tv_username.setText(loginConfig.getUsername());
-            currentUser.setUsername(loginConfig.getUsername());
-            if (vCard == null || vCard.getNickName() == null) {
-                tv_nickname.setText(loginConfig.getUsername());
-                currentUser.setNickName(loginConfig.getUsername());
-            } else {
-                tv_nickname.setText(vCard.getNickName());
-                currentUser.setNickName(vCard.getNickName());
-            }
-            if (vCard == null || vCard.getAvatar() == null) {
-
-                currentUser.setIcon(FormatUtil.drawable2Bitmap
-                        (context.getResources().getDrawable(R.drawable.icon)));
-                image.setImageBitmap(currentUser.getIcon());
-
-            } else {
-                ByteArrayInputStream bais = new ByteArrayInputStream(vCard.getAvatar());
-                currentUser.setIcon(FormatUtil.getInstance().InputStream2Bitmap(bais));
-                image.setImageBitmap(currentUser.getIcon());
-            }
-        } catch (XMPPException e) {
-            e.printStackTrace();
+        currentUser.setIcon(getLocalAvatar());
+        currentUser.setProvince(loginConfig.getProvince());
+        currentUser.setCity(loginConfig.getCity());
+        currentUser.setCountry(loginConfig.getCountry());
+        currentUser.setSign(loginConfig.getSign());
+        currentUser.setUsername(loginConfig.getUsername());
+        currentUser.setNickName(loginConfig.getNickname());
+        tv_username.setText(currentUser.getUsername());
+        tv_nickname.setText(currentUser.getNickName());
+        image.setImageBitmap(currentUser.getIcon());
+        if (StringUtil.empty(currentUser.getSign()))
+            tv_sign.setText("还未设置签名哦！");
+        else
+            tv_sign.setText(currentUser.getSign());
+        if(StringUtil.empty(currentUser.getCountry())) {
+            tv_place.setText("还未设置地区哦！");
+        }else if("中国".equals(currentUser.getCountry()))
+        {
+            tv_place.setText(loginConfig.getProvince()+" "+loginConfig.getCity());
+        }else
+        {
+            tv_place.setText(loginConfig.getCountry());
         }
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if("edit".equals(intent.getStringExtra("action")))
+        {
+            initPersonInfo();
+        }
+        if(!xmppConnection.isAuthenticated()){
+            LoginTask loginTask=new LoginTask(this,loginConfig);
+            loginTask.execute();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -463,20 +438,57 @@ public class MainActivity extends ActivityTool {
         setContentView(R.layout.activity_main);
         AppUtil.syncIsDebug(getApplicationContext());
         loginConfig = getLoginConfig();
-        LoginTask loginTask=new LoginTask(this,loginConfig);
-        loginTask.execute();
-        messageMgr=MessageManager.getInstance(context);
-        noticeManager = NoticeManager.getInstance(context);
-        xmppConnection=XmppConnectionManager.getInstance().getConnection();
-        init();
-        initActionBar();
-        initFriendList();
-        initRecentChatInfo();
-        initPersonInfo();
-        navigation = (BottomNavigationView) findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-        //默认 >3 的选中效果会影响ViewPager的滑动切换时的效果，故利用反射去掉
-        BottomNavigationViewHelper.disableShiftMode(navigation);
+//        loginConfig.setXmppPort(5222);
+//        saveLoginConfig(loginConfig);
+        XmppConnectionManager.getInstance().init(loginConfig);
+        if (!StringUtil.notEmpty(loginConfig.getUsername())
+                ||!StringUtil.notEmpty(loginConfig.getPassword())){
+            Intent intent=new Intent(this,LoginActivity.class);
+            startActivity(intent);
+            finish();
+        }else {
+            LoginTask loginTask=new LoginTask(this,loginConfig){
+                @Override
+                protected void onPostExecute(Integer result) {
+                    super.onPostExecute(result);
+                    switch (result) {
+                        case Constant.LOGIN_SUCCESS:
+                            Toast.makeText(context, Constant.LOGIN_SUCCESS_MESSAGE, Toast.LENGTH_SHORT).show();
+                            loginConfig=getLoginConfig();
+                            initPersonInfo();
+                            break;
+                        case Constant.LOGIN_ERROR:
+                            Toast.makeText(context,Constant.LOGIN_ERROR_MESSAGE, Toast.LENGTH_SHORT).show();
+                            break;
+                        case Constant.SERVER_UNAVAILABLE:
+                            Toast.makeText(context,Constant.SERVER_UNAVAILABLE_MESSAGE, Toast.LENGTH_SHORT).show();
+                            break;
+                        case Constant.USERNAME_PWD_ERROR:
+                            Toast.makeText(context,Constant.USERNAME_PWD_ERROR_MESSAGE, Toast.LENGTH_SHORT).show();
+                            break;
+                        case Constant.UNKNOWN:
+                            Toast.makeText(context,Constant.UNKNOWN_MESSAGE, Toast.LENGTH_SHORT).show();
+                            break;
+                        default:
+                            break;
+                    }
+                    super.onPostExecute(result);
+                }
+            };
+            loginTask.execute();
+            ContacterManager.init(this,XmppConnectionManager.getInstance()
+                    .getConnection());
+            messageMgr=MessageManager.getInstance(context);
+            noticeManager = NoticeManager.getInstance(context);
+            init();
+            initActionBar();
+            initFriendList();
+            initRecentChatInfo();
+            initPersonInfo();
+            initPersonInfo();
+
+        }
+
     }
 
     //处理点击个人信息栏的事件
@@ -489,13 +501,13 @@ public class MainActivity extends ActivityTool {
                         ll_icon.setBackgroundColor(getResources().getColor(R.color.touchevent));
                     }
                     if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-                        ll_icon.setBackground(getResources().getDrawable(R.drawable.border_bg));
+                        ll_icon.setBackgroundColor(getResources().getColor(R.color.white));
                     }
                     if (event.getAction() == MotionEvent.ACTION_UP) {
                         Intent intent = new Intent();
                         intent.setAction("android.intent.action.avatar");
                         startActivity(intent);
-                        ll_icon.setBackground(getResources().getDrawable(R.drawable.border_bg));
+                        ll_icon.setBackgroundColor(getResources().getColor(R.color.white));
                     }
                     return true;
                 case R.id.ll_nick:
@@ -503,10 +515,13 @@ public class MainActivity extends ActivityTool {
                         ll_nick.setBackgroundColor(getResources().getColor(R.color.touchevent));
                     }
                     if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-                        ll_nick.setBackground(getResources().getDrawable(R.drawable.border_bg));
+                        ll_nick.setBackgroundColor(getResources().getColor(R.color.white));
                     }
                     if (event.getAction() == MotionEvent.ACTION_UP) {
-                        ll_nick.setBackground(getResources().getDrawable(R.drawable.border_bg));
+                        ll_nick.setBackgroundColor(getResources().getColor(R.color.white));
+                        Intent intent=new Intent(MainActivity.this,PersonalInfoEditActivity.class);
+                        intent.putExtra("EDIT","昵称");
+                        startActivity(intent);
                     }
                     return true;
                 case R.id.ll_user:
@@ -514,10 +529,10 @@ public class MainActivity extends ActivityTool {
                         ll_user.setBackgroundColor(getResources().getColor(R.color.touchevent));
                     }
                     if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-                        ll_user.setBackground(getResources().getDrawable(R.drawable.border_bg));
+                        ll_user.setBackgroundColor(getResources().getColor(R.color.white));
                     }
                     if (event.getAction() == MotionEvent.ACTION_UP) {
-                        ll_user.setBackground(getResources().getDrawable(R.drawable.border_bg));
+                        ll_user.setBackgroundColor(getResources().getColor(R.color.white));
                     }
                     return true;
                 case R.id.ll_place:
@@ -525,10 +540,11 @@ public class MainActivity extends ActivityTool {
                         ll_place.setBackgroundColor(getResources().getColor(R.color.touchevent));
                     }
                     if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-                        ll_place.setBackground(getResources().getDrawable(R.drawable.border_bg));
+                        ll_place.setBackgroundColor(getResources().getColor(R.color.white));
                     }
                     if (event.getAction() == MotionEvent.ACTION_UP) {
-                        ll_place.setBackground(getResources().getDrawable(R.drawable.border_bg));
+                        ll_place.setBackgroundColor(getResources().getColor(R.color.white));
+
                     }
                     return true;
 
@@ -537,13 +553,41 @@ public class MainActivity extends ActivityTool {
                         ll_sign.setBackgroundColor(getResources().getColor(R.color.touchevent));
                     }
                     if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-                        ll_sign.setBackground(getResources().getDrawable(R.drawable.border_bg));
+                        ll_sign.setBackgroundColor(getResources().getColor(R.color.white));
                     }
                     if (event.getAction() == MotionEvent.ACTION_UP) {
-                        ll_sign.setBackground(getResources().getDrawable(R.drawable.border_bg));
+                        ll_sign.setBackgroundColor(getResources().getColor(R.color.white));
+                        Intent intent=new Intent(MainActivity.this,PersonalInfoEditActivity.class);
+                        intent.putExtra("EDIT","签名");
+                        startActivity(intent);
                     }
                     return true;
-
+                case R.id.ll_useradd:
+                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        ll_useradd.setBackgroundColor(getResources().getColor(R.color.touchevent));
+                    }
+                    if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+                        ll_useradd.setBackgroundColor(getResources().getColor(R.color.white));
+                    }
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        ll_useradd.setBackgroundColor(getResources().getColor(R.color.white));
+                        Intent intent = new Intent(MainActivity.this, UserAddActivity.class);
+                        startActivity(intent);
+                    }
+                    return true;
+                case R.id.ll_groupadd:
+                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        ll_groupadd.setBackgroundColor(getResources().getColor(R.color.touchevent));
+                    }
+                    if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+                        ll_groupadd.setBackgroundColor(getResources().getColor(R.color.white));
+                    }
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        ll_groupadd.setBackgroundColor(getResources().getColor(R.color.white));
+                        Intent intent = new Intent(MainActivity.this, GroupActivity.class);
+                        startActivity(intent);
+                    }
+                    return true;
                 default:
                     return true;
             }
@@ -574,7 +618,7 @@ public class MainActivity extends ActivityTool {
         }
     };
 
-    public class ContacterReceiver extends BroadcastReceiver {
+    private class ContacterReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             Notice notice = (Notice) intent.getSerializableExtra("notice");
@@ -719,17 +763,59 @@ public class MainActivity extends ActivityTool {
         XmppConnectionManager.getInstance().getConnection()
                 .sendPacket(presence);
     }
+    private Bitmap getLocalAvatar() {
+        //默认image路径
+        String imageDir = Environment.getExternalStorageDirectory()
+                .getAbsolutePath() +
+                this.getResources().getString(R.string.img_dir) + "/";
+        File dirfile = new File(imageDir);
 
-    @Override
-    public void onBackPressed() {
+        String fileName = "avatar_" + StringUtil.getJidByName
+                (loginConfig.getUsername(), loginConfig.getServerName()) + ".png";
+        byte[] bytes = null;
+        try {
+            if (!dirfile.exists()) {
+                dirfile.mkdirs();
+            }
 
-        if(System.currentTimeMillis()-startTime >= 2000)
-        {
-            showToast("再按一次退出程序！");
-            startTime = System.currentTimeMillis();
-        }else
-        {
-          isExit();
+            File file = new File(imageDir, fileName);
+            if (file.exists()) {
+                try {
+                    FileInputStream in = new FileInputStream(file);
+                    bytes = new byte[(int) file.length()];
+                    in.read(bytes);
+                    in.close();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }else
+            {
+                //todo 不存在localAvatar（不确定要做）
+                VCard vCard=new VCard();
+                vCard.load(XmppConnectionManager.getInstance().getConnection());
+                AppUtil.cachedAvatarImage(context,FormatUtil.Bytes2Bitmap(vCard.getAvatar()),
+                        StringUtil.getJidByName(loginConfig.getUsername(),loginConfig.getServerName()));
+                return  FormatUtil.Bytes2Bitmap(vCard.getAvatar());
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Bitmap bitmap=FormatUtil.drawable2Bitmap(getResources().
+                    getDrawable(R.drawable.default_icon));
+           return bitmap;
         }
+        return FormatUtil.Bytes2Bitmap(bytes);
     }
+
+        @Override
+        public void onBackPressed(){
+
+            if (System.currentTimeMillis() - startTime >= 2000) {
+                showToast("再按一次退出程序！");
+                startTime = System.currentTimeMillis();
+            } else {
+                isExit();
+            }
+        }
+
 }

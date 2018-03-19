@@ -80,18 +80,17 @@
             android:background="@color/white"
             android:orientation="horizontal">
              <TextView
-            android:layout_width="0dp"
-            android:layout_weight="0.3"
-            android:layout_height="match_parent"
+                android:layout_width="0dp"
+                android:layout_weight="0.3"
+                android:layout_height="match_parent"
                  android:textColor="#001a00"
                  android:text="地区"
-            android:textSize="18sp"
-
-            android:paddingTop="20dp"
-            android:paddingLeft="10dp"
+                android:textSize="18sp"
+                android:paddingTop="20dp"
+                android:paddingLeft="10dp"
             />
             <TextView
-                android:id="@+id/userinfo_tv_address"
+                android:id="@+id/tv_userinfo_address"
                 android:layout_width="0dp"
                 android:layout_weight="0.7"
                 android:layout_height="match_parent"
@@ -120,7 +119,7 @@
                 android:paddingLeft="10dp"
                 />
             <TextView
-                android:id="@+id/userinfo_tv_sign"
+                android:id="@+id/tv_userinfo_sign"
                 android:layout_width="0dp"
                 android:layout_weight="0.7"
                 android:layout_height="match_parent"
@@ -139,13 +138,24 @@
             android:background="@color/white"
             android:orientation="horizontal">
             <TextView
-                android:id="@id/userinfo_tv_nickname"
+
                 android:layout_width="0dp"
                 android:layout_weight="0.3"
                 android:layout_height="match_parent"
                 android:text="朋友圈"
                 android:textSize="18sp"
                 android:textColor="#001a00"
+                android:paddingTop="20dp"
+                android:paddingLeft="10dp"
+                />
+            <TextView
+                android:id="@+id/userinfo_tv_friendCircle"
+                android:layout_width="0dp"
+                android:layout_weight="0.7"
+                android:layout_height="match_parent"
+                android:text="该功能暂未实现！"
+                android:textSize="18sp"
+                android:textColor="@color/gary"
                 android:paddingTop="20dp"
                 android:paddingLeft="10dp"
                 />

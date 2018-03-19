@@ -27,61 +27,65 @@ import org.jivesoftware.smackx.provider.XHTMLExtensionProvider;
 import org.jivesoftware.smackx.search.UserSearch;
 
 /**
- * Xmpp连接管理类
+ * Xmpp连接管理类-单例模式
+ * todo并发控制
  * Created by q on 2017/10/25.
  */
 
 public class XmppConnectionManager {
 
 
-    private XMPPConnection connection;
+    private static XMPPConnection connection;
     private static ConnectionConfiguration connectionConfiguration;
-    private static XmppConnectionManager xmppConnectionManager;
+    private volatile static XmppConnectionManager xmppConnectionManager;
 
-    public XmppConnectionManager()
+    private XmppConnectionManager()
     {
 
     }
+
     public static XmppConnectionManager getInstance()
     {
-        if (xmppConnectionManager==null)
-        {
-            xmppConnectionManager=new XmppConnectionManager();
+        if (xmppConnectionManager == null) {
+                if (xmppConnectionManager == null) {
+                    xmppConnectionManager = new XmppConnectionManager();
+            }
         }
         return xmppConnectionManager;
     }
     public XMPPConnection init(LoginConfig loginConfig)
     {
-            connection.DEBUG_ENABLED=false;
-            ProviderManager pm=ProviderManager.getInstance();
-            configure(pm);
-            connectionConfiguration=new ConnectionConfiguration(loginConfig.getXmppIP(),
-                    loginConfig.getXmppPort(),loginConfig.getServerName());
-            //允许重连
-            connectionConfiguration.setReconnectionAllowed(true);
-            //设置在线状态
-            connectionConfiguration.setSendPresence(true);
-            connectionConfiguration.setSASLAuthenticationEnabled(true);
-            // 收到好友邀请后manual表示需要经过同意,accept_all表示不经同意自动为好友
-            Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.manual);
-            connectionConfiguration.setSecurityMode(ConnectionConfiguration.SecurityMode.enabled);
-            connection=new XMPPConnection(connectionConfiguration);
-            return connection;
+        connection.DEBUG_ENABLED=false;
+        ProviderManager pm=ProviderManager.getInstance();
+        configure(pm);
+        connectionConfiguration=new ConnectionConfiguration(loginConfig.getXmppIP(),
+                loginConfig.getXmppPort(),loginConfig.getServerName());
+        //允许重连
+        connectionConfiguration.setReconnectionAllowed(true);
+        //设置在线状态
+        connectionConfiguration.setSendPresence(true);
+        connectionConfiguration.setSASLAuthenticationEnabled(true);
+        // 收到好友邀请后manual表示需要经过同意,accept_all表示不经同意自动为好友
+        Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.manual);
+        connectionConfiguration.setSecurityMode(ConnectionConfiguration.SecurityMode.enabled);
+        connection=new XMPPConnection(connectionConfiguration);
+
+        return connection;
     }
-    public XMPPConnection getConnection() {
+    public  XMPPConnection getConnection() {
         if(connection==null)
         {
             throw new RuntimeException("请先初始化XMPPConnection连接");
         }
         return connection;
     }
-    public void disconnect() {
+    public static void disconnect() {
         if (connection != null) {
             connection.disconnect();
         }
     }
 
-    public void configure(ProviderManager pm) {
+    private void configure(ProviderManager pm) {
 
         // Private Data Storage
         pm.addIQProvider("query", "jabber:iq:private",

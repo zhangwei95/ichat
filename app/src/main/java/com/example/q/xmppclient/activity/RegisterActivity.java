@@ -1,7 +1,6 @@
 package com.example.q.xmppclient.activity;
 
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -16,10 +15,9 @@ import com.example.q.xmppclient.util.FormatUtil;
 import com.example.q.xmppclient.util.StringUtil;
 import com.example.q.xmppclient.util.ValidataUtil;
 
-import java.security.KeyStore;
 import java.util.Map;
 
-public class RegisterActivity extends ActivityTool {
+public class RegisterActivity extends ActivityBase {
     private Button registerbtn;
     private EditText et_pwd,et_confirm_pwd,et_nickname,et_username;
     private LoginConfig loginConfig;

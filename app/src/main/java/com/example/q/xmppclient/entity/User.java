@@ -66,6 +66,24 @@ public class User implements Parcelable {
         this.city = city;
     }
 
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getSign() {
+        return sign;
+    }
+
+    public void setSign(String sign) {
+        this.sign = sign;
+    }
+
+    private String country;
+    private String sign;
     private String province;
     private String city;
     private Date birthday;//

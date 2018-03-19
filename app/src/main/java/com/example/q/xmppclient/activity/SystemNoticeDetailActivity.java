@@ -17,7 +17,7 @@ import com.example.q.xmppclient.manager.NoticeManager;
  * 消息明细页
  *
  */
-public class SystemNoticeDetailActivity extends ActivityTool {
+public class SystemNoticeDetailActivity extends ActivityBase {
 	private ImageView titleBack;
 	private String noticeId;
 	private TextView ivTitleName;

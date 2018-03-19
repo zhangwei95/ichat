@@ -21,7 +21,11 @@ public class DataBaseHelper extends SDCardSQLiteOpenHelper{
             "id integer primary key autoincrement,"+
             "jid text,"+
             "nickname text,"+
-            "avatar text)";
+            "avatar text,"+
+            "country text,"+
+            "province text,"+
+            "city text,"+
+            "sign text);";
     public DataBaseHelper(Context context, String name, SQLiteDatabase.CursorFactory factory,
                           int version) {
         super(context, name, factory, version);

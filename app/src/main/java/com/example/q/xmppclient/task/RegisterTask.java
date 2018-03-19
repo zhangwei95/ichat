@@ -6,12 +6,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.util.Xml;
 import android.widget.Toast;
 
-import com.example.q.xmppclient.R;
+import com.example.q.xmppclient.activity.ActivityBase;
 import com.example.q.xmppclient.activity.LoginActivity;
-import com.example.q.xmppclient.activity.IActivity;
 import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.manager.LoginConfig;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
@@ -26,9 +24,6 @@ import org.jivesoftware.smack.filter.PacketIDFilter;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Registration;
-import org.jivesoftware.smackx.packet.VCard;
-import org.jivesoftware.smackx.provider.VCardProvider;
-import org.xmlpull.v1.XmlPullParser;
 
 import java.util.Map;
 
@@ -39,24 +34,18 @@ import java.util.Map;
 public class RegisterTask extends AsyncTask<String,Integer,Integer> {
     private ProgressDialog pd;
     private Context context;
-    private IActivity iActivity;
-    private String username;
-    private String password;
-    private String nickname;
+    private ActivityBase activityTool;
     private  LoginConfig loginConfig;
     private  XMPPConnection xmppConnection;
     private Map<String,String> attr;
 
-    public RegisterTask(IActivity activityTool,LoginConfig loginConfig)
+    public RegisterTask(ActivityBase activityTool, LoginConfig loginConfig)
     {
-        this.username=loginConfig.getUsername();
-        this.password=loginConfig.getPassword();
-        this.nickname=loginConfig.getNickname();
         this.loginConfig=loginConfig;
-        this.iActivity=activityTool;
-        xmppConnection=XmppConnectionManager.getInstance().init(loginConfig);
-        pd=iActivity.getProgressDialog();
-        context=iActivity.getContext();
+        this.activityTool=activityTool;
+        xmppConnection=XmppConnectionManager.getInstance().getConnection();
+        pd=activityTool.getProgressDialog();
+        context=activityTool.getContext();
     }
     @Override
     protected void onPreExecute() {
@@ -84,15 +73,12 @@ public class RegisterTask extends AsyncTask<String,Integer,Integer> {
                 ad.setPositiveButton("直接登录", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        loginConfig.setUsername(username);
-                        loginConfig.setPassword(password);
-                        loginConfig.setServerName("zw");
                         loginConfig.setFirstStart(true);
                         loginConfig.setRemember(true);
                         loginConfig.setAutoLogin(false);
-                        LoginTask loginTask=new LoginTask(iActivity,loginConfig);
+                        loginConfig.setNewUser(true);
+                        LoginTask loginTask=new LoginTask(activityTool,loginConfig);
                         loginTask.execute();
-
                     }
                 });
                 ad.setNegativeButton("手动登录", new DialogInterface.OnClickListener() {
@@ -101,7 +87,6 @@ public class RegisterTask extends AsyncTask<String,Integer,Integer> {
                         Intent intent=new Intent();
                         intent.setClass(context, LoginActivity.class);
                         context.startActivity(intent);
-
                     }
                 });
                 ad.show();
@@ -109,6 +94,7 @@ public class RegisterTask extends AsyncTask<String,Integer,Integer> {
             case Constant.USER_EXIST:
                 Toast.makeText(context,Constant.USER_EXIST_MESSAGE,Toast.LENGTH_SHORT).show();
                 break;
+
             default:
                 Toast.makeText(context,"default",Toast.LENGTH_SHORT).show();
                 break;
@@ -122,7 +108,9 @@ public class RegisterTask extends AsyncTask<String,Integer,Integer> {
     private Integer register()
     {
         try {
-            xmppConnection.connect();
+            if(!xmppConnection.isConnected()) {
+                xmppConnection.connect();
+            }
         }catch (XMPPException e)
         {
             return Constant.REGISTER_SERVER_UNAVAILABLE;
@@ -130,9 +118,9 @@ public class RegisterTask extends AsyncTask<String,Integer,Integer> {
         Registration reg=new Registration();
         reg.setType(IQ.Type.SET);
         reg.setTo(xmppConnection.getServiceName());
-        reg.setUsername(username);
-        reg.setPassword(password);
-        reg.addAttribute("name",nickname);
+        reg.setUsername(loginConfig.getUsername());
+        reg.setPassword(loginConfig.getPassword());
+        reg.addAttribute("name",loginConfig.getNickname());
         reg.addAttribute("android", "geolo_createUser_android");
 
         PacketFilter filter = new AndFilter(new PacketIDFilter(reg

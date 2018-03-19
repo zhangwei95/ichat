@@ -1,12 +1,13 @@
 package com.example.q.xmppclient.entity;
 
-import android.os.Message;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
 import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.util.DateUtil;
+
+import org.jivesoftware.smack.packet.Message;
 
 import java.util.Date;
 
@@ -18,7 +19,7 @@ import java.util.Date;
  * 消息对象
  * 实现接口Parcelable支持序列化，Comparable实现自定义对象的排序功能（compareTo()）
  */
-public class ChatMessage implements Parcelable, Comparable<ChatMessage> {
+public class ChatMessage  implements Parcelable, Comparable<ChatMessage> {
     public static final String IMMESSAGE_KEY = "immessage.key";
     public static final String KEY_TIME = "immessage.time";
     public static final int SUCCESS = 0;

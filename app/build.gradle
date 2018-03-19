@@ -2,6 +2,14 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.mob.sdk'
 
 android {
+    signingConfigs {
+        config {
+            keyAlias 'ichat'
+            keyPassword 'outZHANGWEI123'
+            storeFile file('D:/backup/kstone/keystone.jks')
+            storePassword 'outZHANGWEI123'
+        }
+    }
     MobSDK {
         appKey "23b1270e6bd38"
         appSecret "40e876da22dd51d9f0b41fb1ab78c661"
@@ -27,6 +35,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
         }
     }
 }
@@ -42,13 +51,15 @@ dependencies {
     compile files('libs/jxmpp-core-0.1.0.jar')
     compile files('libs/jxmpp-util-cache-0.1.0.jar')
     compile files('libs/minidns-0.1.1.jar')
-//    compile files('libs/org.xbill.dns_2.1.6.jar')
+    //    compile files('libs/org.xbill.dns_2.1.6.jar')
     compile files('libs/asmack-android-6.jar')
-    compile ('com.android.support:appcompat-v7:26.+'){
-        exclude group: "com.android.support", module:"support-v4"
+    compile('com.android.support:appcompat-v7:26.+') {
+        exclude group: "com.android.support", module: "support-v4"
     }
+    compile 'com.github.d-max:spots-dialog:0.7@aar'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.android.support:design:26.+'
     compile 'com.android.support:support-vector-drawable:26.+'
+    compile 'com.github.florent37:materialtextfield:1.0.7'
     testCompile 'junit:junit:4.12'
 }

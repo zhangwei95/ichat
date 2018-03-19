@@ -1,15 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-        android:orientation="vertical"
-        android:layout_height="match_parent"
-        android:layout_width="match_parent"
-          android:background="@mipmap/ic_launcher"
-        xmlns:android="http://schemas.android.com/apk/res/android">
-       <LinearLayout
-           android:orientation="horizontal"
-           android:layout_width="match_parent"
-           android:layout_height="0dp"
-           android:layout_weight="0.1"></LinearLayout>
+<LinearLayout android:orientation="vertical"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:background="@drawable/login_bg"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
        <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
@@ -20,22 +15,31 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="0.1">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="0.2"
-                    android:text="用户名："
-                    android:gravity="center"/>
-                <EditText
-                    android:id="@+id/editText_userName"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="0.8"
-                    android:singleLine="true"
-                    android:layout_marginBottom="15dp"
-                    android:layout_marginTop="10dp"
-                    android:textColor="#4b4b4b"
-                    />
+                <com.github.florent37.materialtextfield.MaterialTextField
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:mtf_labelColor="@color/gary"
+                    app:mtf_image="@drawable/login_user2"
+                    app:mtf_openKeyboardOnFocus="true"
+                    app:mtf_cardCollapsedHeight="2dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    >
+
+                    <EditText
+                        android:id="@+id/editText_userName"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:singleLine="true"
+                        android:hint="Username"
+                        android:text="zhangwei"
+                        android:textColor="@color/gary"
+                        android:layout_marginLeft="10dp"
+
+
+                        />
+                </com.github.florent37.materialtextfield.MaterialTextField>
+
             </LinearLayout>
             <LinearLayout
                 android:orientation="horizontal"
@@ -43,57 +47,56 @@
                 android:layout_height="0dp"
                 android:layout_weight="0.1"
                 >
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="0.2"
-                    android:text="密    码："
-                    android:gravity="center"
-                    />
-                <EditText
-                    android:id="@+id/editText_password"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:singleLine="true"
-                    android:inputType="textPassword"
-                    android:layout_weight="0.8"
-                    android:layout_marginBottom="15dp"
-                    android:layout_marginTop="10dp"
-                    android:textColor="#4b4b4b"/>
+                <com.github.florent37.materialtextfield.MaterialTextField
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:mtf_labelColor="@color/gary"
+                    app:mtf_image="@drawable/login_key2"
+                    app:mtf_openKeyboardOnFocus="true"
+                    app:mtf_cardCollapsedHeight="2dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    >
+                    <EditText
+                        android:id="@+id/editText_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:singleLine="true"
+                        android:text="zhangwei"
+                        android:hint="Password"
+                        android:inputType="textPassword"
+                        android:textColor="@color/gary"
+                        android:layout_marginLeft="10dp"
+                        />
+                </com.github.florent37.materialtextfield.MaterialTextField>
             </LinearLayout>
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="0.1">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="0.2"
-                    android:text="服务器："
-                    android:gravity="center"/>
-                <EditText
-                    android:id="@+id/editText_serverIp"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="0.8"
-                    android:layout_marginBottom="15dp"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/default_ip"
-                    android:enabled="false"
-                    android:textColor="#4b4b4b"
-                    />
-            </LinearLayout>
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="0.1">
+            <!--<LinearLayout-->
+                <!--android:orientation="horizontal"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="0dp"-->
+                <!--android:layout_weight="0.1">-->
+                <!--<TextView-->
+                    <!--android:layout_width="0dp"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:layout_weight="0.2"-->
+                    <!--android:text="服务器："-->
+                    <!--android:gravity="center"/>-->
+                <!--<EditText-->
+                    <!--android:id="@+id/editText_serverIp"-->
+                    <!--android:layout_width="0dp"-->
+                    <!--android:layout_height="match_parent"-->
+                    <!--android:layout_weight="0.8"-->
+                    <!--android:layout_marginBottom="15dp"-->
+                    <!--android:layout_marginTop="10dp"-->
+                    <!--android:text="@string/default_ip"-->
+                    <!--android:enabled="false"-->
+                    <!--android:textColor="#4b4b4b"-->
+                    <!--/>-->
+            <!--</LinearLayout>-->
             <LinearLayout
                android:orientation="horizontal"
                android:layout_width="match_parent"
-               android:layout_height="0dp"
-               android:layout_weight="0.2">
+               android:layout_height="wrap_content">
                 <CheckBox
                     android:id="@+id/cb_isRemember"
                     android:layout_width="0dp"
@@ -110,36 +113,61 @@
                     android:text="自动登录"
                     android:textColor="#0f0f0f" />
             </LinearLayout>
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:gravity="center"
-                android:layout_weight="0.6">
-                <Button
-                    android:id="@+id/btn_register"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="10dp"
-                    android:text="注册"
-                    android:layout_gravity="center"
-                    android:textColor="#4b4b4b"
-                    />
-                <Button
-                    android:id="@+id/btn_login"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="10dp"
-                    android:text="登录"
-                    android:layout_gravity="center"
-                    android:textColor="#4b4b4b"
-                    />
-            </LinearLayout>
+           <Button
+               android:id="@+id/btn_login"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:layout_marginStart="20dp"
+               android:layout_marginEnd="20dp"
+               android:text="登录"
+               android:background="#0099ff"
+               android:layout_gravity="center"
+               android:textColor="#ffffff"
+               />
+           <LinearLayout
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:orientation="horizontal">
+               <TextView
+                   android:id="@+id/btn_forgotPwd"
+                   android:layout_width="0dp"
+                   android:layout_weight="0.15"
+                   android:layout_height="wrap_content"
+                   android:layout_marginRight="10dp"
+                   android:text="忘记密码?"
+                   android:background="#00ffffff"
+                   android:layout_gravity="start"
+                   android:paddingTop="5dp"
+                   android:paddingStart="20dp"
+                   android:paddingLeft="20dp"
+                   android:textColor="#000000"
+                   />
+               <TextView
+                   android:layout_width="0dp"
+                   android:layout_weight="0.3"
+                   android:layout_height="wrap_content" />
+               <TextView
+                   android:id="@+id/btn_register"
+                   android:layout_width="0dp"
+                   android:layout_weight="0.1"
+                   android:layout_height="wrap_content"
+                   android:layout_marginRight="10dp"
+                   android:text="注册"
+                   android:paddingTop="5dp"
+                   android:paddingEnd="20dp"
+                   android:paddingRight="20dp"
+                   android:background="#00ffffff"
+                   android:gravity="end"
+                   android:textColor="#4b4b4b"
+                   android:clickable="true"
+                   />
            </LinearLayout>
-        </LinearLayout>
+           </LinearLayout>
+
        <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="0.1"></LinearLayout>
+            android:layout_weight="2">
+       </LinearLayout>
 </LinearLayout>
