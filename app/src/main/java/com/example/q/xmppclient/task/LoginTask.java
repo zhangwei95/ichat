@@ -18,25 +18,38 @@ import com.example.q.xmppclient.activity.IActivity;
 import com.example.q.xmppclient.activity.RegisterActivity;
 import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.db.DataBaseHelper;
+import com.example.q.xmppclient.entity.ChatMessage;
+import com.example.q.xmppclient.entity.Notice;
 import com.example.q.xmppclient.manager.LoginConfig;
+import com.example.q.xmppclient.manager.MessageManager;
+import com.example.q.xmppclient.manager.NoticeManager;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.util.AppUtil;
+import com.example.q.xmppclient.util.DateUtil;
 import com.example.q.xmppclient.util.FormatUtil;
 import com.example.q.xmppclient.util.StringUtil;
 
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smackx.OfflineMessageManager;
+import org.jivesoftware.smackx.packet.OfflineMessageInfo;
 import org.jivesoftware.smackx.packet.VCard;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 
 /**
@@ -125,14 +138,18 @@ public class LoginTask extends AsyncTask<String, Integer, Integer> {
                 xmppConnection.connect();
             }
             xmppConnection.login(username, password);
-            //todo 是新用户则给用户创建VCard
+            //是新用户则给用户创建VCard
             if(loginConfig.isNewUser()) {
                 createNewVCardForNewUser(loginConfig);
             }
             loginConfig.setUsername(username);
             loginConfig.setPassword(password);
             loginConfig.setOnline(true);
-
+            //todo 获取离线消息
+            getOfflineMsg();
+            //todo 获取离线消息
+            //告诉服务器上线了
+            xmppConnection.sendPacket(new Presence(Presence.Type.available));
             if (activityTool.getClass().equals(LoginActivity.class)) {
                 loginByLoginActivity();
             }else if (activityTool.getClass().equals(RegisterActivity.class)) {
@@ -140,8 +157,7 @@ public class LoginTask extends AsyncTask<String, Integer, Integer> {
             }else if (activityTool.getClass().equals(MainActivity.class)){
                 loginByMainActivity();
             }
-            //告诉服务器上线了
-            xmppConnection.sendPacket(new Presence(Presence.Type.available));
+
         } catch (Exception exc) {
             int code;
 
@@ -260,7 +276,7 @@ public class LoginTask extends AsyncTask<String, Integer, Integer> {
         }
         Intent intent = new Intent(context, MainActivity.class);
         if (loginConfig.isFirstStart()) {
-            //todo 首次登录动画界面
+            //todo 首次登录动画界面  这里可以删掉（待考虑）
             //SetVcardTask setVcardTask=new SetVcardTask(loginConfig.getNickname());
             //setVcardTask.execute();
             DataBaseHelper dbhelper = new DataBaseHelper(context, loginConfig.getUsername(), null,3);
@@ -305,6 +321,74 @@ public class LoginTask extends AsyncTask<String, Integer, Integer> {
         loginConfig.setCountry(vcard.getAddressFieldHome("country"));
         activityTool.saveLoginConfig(loginConfig);
         activityTool.startService();
+    }
+
+    //获取离线消息
+    private void getOfflineMsg(){
+        //确保用户数据库文件存在
+        if (Environment.getExternalStorageState().equals(
+                Environment.MEDIA_MOUNTED) == true) {
+            String dbPath = context.getString(R.string.dir)
+                    + context.getString(R.string.db_dir) + "/";
+            String EXTERN_PATH = Environment.getExternalStorageDirectory()
+                    .getAbsolutePath() + dbPath;
+            File f = new File(EXTERN_PATH+loginConfig.getUsername());
+            if(!f.exists()){
+                DataBaseHelper dbhelper = new DataBaseHelper(context, loginConfig.getUsername(), null,3);
+                dbhelper.getWritableDatabase();
+            }
+            //离线消息管理器对象
+            OfflineMessageManager offlineMessageManager=new OfflineMessageManager(xmppConnection);
+            try {
+                //获取离线消息迭代器
+                Iterator<Message> it = offlineMessageManager
+                        .getMessages();
+                //逐条获取离线消息，并转化成自己定义的消息类型，并保存
+                while (it.hasNext()) {
+                    Message message = it.next();
+                    if(message!=null&&message.getBody()!=null&&!message.getBody().equals("null")){
+                        ChatMessage msg=new ChatMessage();
+                        //消息时间参数获取
+                        String time = (String) message.getProperty("immessage.time");
+                        msg.setTime(time);
+                        msg.setContent(message.getBody());
+                        if (message.getType()==Message.Type.error)
+                        {
+                            msg.setType(ChatMessage.ERROR);
+                        }else
+                        {
+                            msg.setType(ChatMessage.SUCCESS);
+                        }
+                        String from=message.getFrom().split("/")[0];
+                        msg.setFromSubJid(from);
+
+                        //生成通知
+                        NoticeManager noticeManager = NoticeManager
+                                .getInstance(context);
+                        Notice notice = new Notice();
+                        notice.setTitle("会话信息");
+                        notice.setNoticeType(Notice.CHAT_MSG);
+                        notice.setContent(message.getBody());
+                        notice.setFrom(from);
+                        notice.setStatus(Notice.UNREAD);
+                        notice.setNoticeTime(time);
+                        // 历史记录
+                        ChatMessage newMessage = new ChatMessage();
+                        newMessage.setMsgType(0);
+                        newMessage.setFromSubJid(from);
+                        newMessage.setContent(message.getBody());
+                        newMessage.setTime(time);
+                        MessageManager.getInstance(context).saveChatMessage(newMessage);
+                        noticeManager.saveNotice(notice);
+                    }
+                }
+                offlineMessageManager.deleteMessages();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
+        }
     }
 }
 /**
