@@ -48,6 +48,7 @@ import com.example.q.xmppclient.util.BottomNavigationViewHelper;
 import com.example.q.xmppclient.util.DateUtil;
 import com.example.q.xmppclient.util.FormatUtil;
 import com.example.q.xmppclient.util.StringUtil;
+import com.mob.wrappers.AnalySDKWrapper;
 
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.Presence;
@@ -74,8 +75,6 @@ public class MainActivity extends ActivityBase {
     private MenuItem menuItem;
     private long startTime=0;//保存第一次点击返回键的时间
     private MessageManager messageMgr;
-    private XmppConnectionManager xmppConnectionManager;
-    private XMPPConnection xmppConnection;
     private NoticeManager noticeManager;
 
     //PersonalInfo
@@ -85,7 +84,7 @@ public class MainActivity extends ActivityBase {
     TextView tv_nickname, tv_username, tv_place, tv_sign;
     //FriendList
     View FriendListView;
-    private LinearLayout friendListll;
+    List<User> userList ;
     private ListView friendListView;
     private LinearLayout ll_useradd;
     private LinearLayout ll_groupadd;
@@ -96,13 +95,9 @@ public class MainActivity extends ActivityBase {
     private LinearLayout chatInfoll;
     private ListView RecentChatListView;
     private ContacterReceiver receiver = null;
-
-
     private NoticeAdapter noticeAdapter = null;
-
     private RecentChatAdapter recentChatAdapter;
     private List<ChatRecordInfo> inviteNotices = new ArrayList<ChatRecordInfo>();
-
 
     @Override
     protected void onPause() {
@@ -120,6 +115,10 @@ public class MainActivity extends ActivityBase {
 
     @Override
     protected void onResume() {
+        if(!XmppConnectionManager.getInstance().getConnection().isConnected()){
+            LoginTask loginTask=new LoginTask(this,loginConfig);
+            loginTask.execute();
+        }
         initPersonInfo();
         inviteNotices=null;
         inviteNotices = new ArrayList<ChatRecordInfo>();
@@ -149,10 +148,6 @@ public class MainActivity extends ActivityBase {
 //                return o2.getNoticeTime().compareTo(o1.getNoticeTime());
             }
         });
-        friendadapter = new FriendAdapter(MainActivity.this,
-                R.layout.friend_list_item, ContacterManager.getContacterList());
-        friendadapter.notifyDataSetChanged();
-        friendListView.setAdapter(friendadapter);
         recentChatAdapter = new RecentChatAdapter(MainActivity.this,
                 R.layout.recent_chat_item, inviteNotices);
         RecentChatListView.setAdapter(recentChatAdapter);
@@ -162,6 +157,7 @@ public class MainActivity extends ActivityBase {
         filter.addAction(Constant.ROSTER_SUBSCRIPTION);
         filter.addAction(Constant.ACTION_SYS_MSG);
         filter.addAction(Constant.NEW_MESSAGE_ACTION);
+        filter.addAction(Constant.REFRESH_UI);
         registerReceiver(receiver, filter);
 
         super.onResume();
@@ -290,8 +286,11 @@ public class MainActivity extends ActivityBase {
     }
 
     public void initFriendList() {
+        userList=new ArrayList<User>();
+        userList=ContacterManager.getContacterList();
+        Collections.sort(userList);
         friendadapter = new FriendAdapter(MainActivity.this,
-                R.layout.friend_list_item, ContacterManager.getContacterList());
+                R.layout.friend_list_item,userList);
         friendListView = (ListView) FriendListView.findViewById(R.id.listview_FriendList);
         friendListView.setAdapter(friendadapter);
         friendListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -377,7 +376,6 @@ public class MainActivity extends ActivityBase {
      */
     public void initPersonInfo() {
         loginConfig=getLoginConfig();
-        currentUser = new User();
         image = (ImageView) PersonalInfoView.findViewById(R.id.test_icon);
         tv_nickname = (TextView) PersonalInfoView.findViewById(R.id.tv_nickname);
         tv_username = (TextView) PersonalInfoView.findViewById(R.id.tv_username);
@@ -393,15 +391,18 @@ public class MainActivity extends ActivityBase {
         ll_user.setOnTouchListener(touch);
         ll_place.setOnTouchListener(touch);
         ll_sign.setOnTouchListener(touch);
-        currentUser.setJid(StringUtil.getJidByName(loginConfig.getUsername(),
+        if(currentUser==null){
+            currentUser=new User();
+            currentUser.setJid(StringUtil.getJidByName(loginConfig.getUsername(),
                     loginConfig.getServerName()));
-        currentUser.setIcon(getLocalAvatar());
-        currentUser.setProvince(loginConfig.getProvince());
-        currentUser.setCity(loginConfig.getCity());
-        currentUser.setCountry(loginConfig.getCountry());
-        currentUser.setSign(loginConfig.getSign());
-        currentUser.setUsername(loginConfig.getUsername());
-        currentUser.setNickName(loginConfig.getNickname());
+            currentUser.setIcon(getLocalAvatar());
+            currentUser.setProvince(loginConfig.getProvince());
+            currentUser.setCity(loginConfig.getCity());
+            currentUser.setCountry(loginConfig.getCountry());
+            currentUser.setSign(loginConfig.getSign());
+            currentUser.setUsername(loginConfig.getUsername());
+            currentUser.setNickName(loginConfig.getNickname());
+        }
         tv_username.setText(currentUser.getUsername());
         tv_nickname.setText(currentUser.getNickName());
         image.setImageBitmap(currentUser.getIcon());
@@ -426,10 +427,6 @@ public class MainActivity extends ActivityBase {
         if("edit".equals(intent.getStringExtra("action")))
         {
             initPersonInfo();
-        }
-        if(!xmppConnection.isAuthenticated()){
-            LoginTask loginTask=new LoginTask(this,loginConfig);
-            loginTask.execute();
         }
     }
 
@@ -617,14 +614,24 @@ public class MainActivity extends ActivityBase {
         }
     };
 
-    private class ContacterReceiver extends BroadcastReceiver {
+    public class ContacterReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Notice notice = (Notice) intent.getSerializableExtra("notice");
-            // String action = intent.getAction();
+            if (Constant.NEW_MESSAGE_ACTION.equals(intent.getAction())){
+                //todo 刷新recentChatInfo
+                Notice notice = (Notice) intent.getSerializableExtra("notice");
+                // String action = intent.getAction();
 //            inviteNotices.add(notice);
-            msgReceive(notice);
-            refresh();
+                msgReceive(notice);
+                refresh();
+            }else if(Constant.REFRESH_UI.equals(intent.getAction())){
+                //todo 刷新recentChatInfo
+                onResume();
+            }else if(Constant.ROSTER_SUBSCRIPTION.equals(intent.getAction())){
+                //todo 刷新FriendList界面
+
+            }
+
         }
     }
 
@@ -750,23 +757,12 @@ public class MainActivity extends ActivityBase {
                 }).show();
     }
 
-    /**
-     * 回复一个presence信息给用户
-     *
-     * @param type
-     * @param to
-     */
-    protected void sendSubscribe(Presence.Type type, String to) {
-        Presence presence = new Presence(type);
-        presence.setTo(to);
-        XmppConnectionManager.getInstance().getConnection()
-                .sendPacket(presence);
-    }
+    //获取本地头像
     private Bitmap getLocalAvatar() {
         //默认image路径
         String imageDir = Environment.getExternalStorageDirectory()
                 .getAbsolutePath() +
-                this.getResources().getString(R.string.img_dir) + "/";
+                context.getResources().getString(R.string.img_dir) + "/";
         File dirfile = new File(imageDir);
 
         String fileName = "avatar_" + StringUtil.getJidByName
@@ -799,12 +795,25 @@ public class MainActivity extends ActivityBase {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            Bitmap bitmap=FormatUtil.drawable2Bitmap(getResources().
+            Bitmap bitmap=FormatUtil.drawable2Bitmap(context.getResources().
                     getDrawable(R.drawable.default_icon));
-           return bitmap;
+            return bitmap;
         }
         return FormatUtil.Bytes2Bitmap(bytes);
     }
+    /**
+     * 回复一个presence信息给用户
+     *
+     * @param type
+     * @param to
+     */
+    protected void sendSubscribe(Presence.Type type, String to) {
+        Presence presence = new Presence(type);
+        presence.setTo(to);
+        XmppConnectionManager.getInstance().getConnection()
+                .sendPacket(presence);
+    }
+
 
         @Override
         public void onBackPressed(){

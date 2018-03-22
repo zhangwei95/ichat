@@ -7,12 +7,16 @@ import org.jivesoftware.smack.packet.RosterPacket;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.ContactsContract.CommonDataKinds.*;
+import android.support.annotation.NonNull;
 
 import com.example.q.xmppclient.util.FormatUtil;
 import com.example.q.xmppclient.util.StringUtil;
 
+import net.sourceforge.pinyin4j.PinyinHelper;
+
 import org.jivesoftware.smackx.packet.VCard;
 
+import java.util.Comparator;
 import java.util.Date;
 
 import static org.jivesoftware.smack.packet.Presence.Mode.available;
@@ -21,7 +25,7 @@ import static org.jivesoftware.smack.packet.Presence.Mode.available;
  * Created by q on 2017/10/17.
  */
 
-public class User implements Parcelable {
+public class User implements Parcelable,Comparable{
     /**
      * 将user保存在intent中时的key
      */
@@ -43,7 +47,6 @@ public class User implements Parcelable {
     public void setUsername(String username) {
         this.username = username;
     }
-
 
     private String username;
     private String nickName;//昵称
@@ -208,4 +211,45 @@ public class User implements Parcelable {
 //        user.setStatus(User.this.status);
         return user;
     }
+
+    @Override
+    public int compareTo(Object o) {
+        if(this.nickName==null){
+            return 1;
+        }
+        if (((User)o).nickName==null) {
+            return -1;
+        }
+        String selfStr=this.nickName;
+        String otherStr=((User)o).nickName;
+        String[] self=selfStr.split("");
+        String[] other=otherStr.split("");
+        for(int i=0;i<self.length;i++){
+            if (i==0){
+                selfStr+="&";
+            }
+            if (self[i].matches("[\\u4E00-\\u9FA5]+")) {
+                String[] pinyinArray = PinyinHelper.toHanyuPinyinStringArray(self[i].toCharArray()[0]);
+                selfStr+=pinyinArray[0].charAt(0);
+            }else if(self[i].matches("[0-9a-zA-Z]")){
+
+                    selfStr+=self[i];
+            }
+        }
+        for(int i=0;i<other.length;i++){
+            if (i==0){
+                otherStr+="&";
+            }
+            if (other[i].matches("[\\u4E00-\\u9FA5]+")) {
+                String[] pinyinArray = PinyinHelper.toHanyuPinyinStringArray(other[i].toCharArray()[0]);
+                otherStr+=pinyinArray[0].charAt(0);
+            }else if(other[i].matches("[0-9a-zA-Z]")){
+                otherStr+=other[i];
+            }
+        }
+        selfStr=selfStr.split("&")[1];
+        otherStr=otherStr.split("&")[1];
+        return selfStr.compareTo(otherStr);
+    }
+
 }
