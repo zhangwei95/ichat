@@ -31,7 +31,7 @@
         android:roundIcon="@mipmap/i_chat"
         android:supportsRtl="true"
         android:persistent="true"
-        android:theme="@style/AppTheme"
+        android:theme="@style/launchTheme"
         tools:replace="android:name">
         <meta-data
             android:name="Mob-AppKey"
@@ -43,7 +43,8 @@
         <activity android:name=".activity.LoginActivity" />
         <activity
             android:name=".activity.MainActivity"
-            android:label="@string/app_name">
+            android:label="@string/app_name"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -105,7 +106,7 @@
 
         <activity
             android:name=".activity.UserInfoActivity"
-            android:launchMode="singleTop" />
+            android:launchMode="singleTask" />
         <activity
             android:name="com.mob.tools.MobUIShell"
             android:configChanges="keyboardHidden|orientation|screenSize"
@@ -126,10 +127,23 @@
         <service
             android:name=".service.ContactService"
             android:enabled="true" />
-
         <activity android:name=".activity.ClipActivity" />
         <activity android:name=".activity.PersonalInfoEditActivity" />
         <activity android:name=".activity.SelectPlaceAcivity"></activity>
+        <!--<receiver android:name=".activity.MainActivity$ContacterReceiver">-->
+            <!--<intent-filter>-->
+                <!--<action android:name="roster.added"></action>-->
+                <!--<action android:name="roster.added"></action>-->
+                <!--<action android:name="roster.presence.changed"></action>-->
+                <!--<action android:name="roster.deleted"></action>-->
+                <!--<action android:name="action_sys_msg"></action>-->
+                <!--<action android:name="roster.newmessage"></action>-->
+                <!--<action android:name="get_offline"></action>-->
+                <!--<action android:name="refresh_personal_info"></action>-->
+                <!--<action android:name="login_failed"></action>-->
+                <!--<action android:name="roster.subscribe"></action>-->
+            <!--</intent-filter>-->
+        <!--</receiver>-->
     </application>
 
 </manifest>

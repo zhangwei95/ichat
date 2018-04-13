@@ -1,14 +1,20 @@
 package com.example.q.xmppclient.entity;
 
+import android.support.annotation.NonNull;
+
+import com.example.q.xmppclient.common.Constant;
+import com.example.q.xmppclient.util.DateUtil;
+
+import java.util.Date;
+
 /**
  * Created by q on 2018/1/10.
  */
 
-public class ChatRecordInfo {
+public class ChatRecordInfo implements Comparable{
     public static final int ADD_FRIEND = 1;// 好友请求
     public static final int SYS_MSG = 2; // 系统消息
     public static final int CHAT_MSG = 3;// 聊天消息
-
     public static final int READ = 0;
     public static final int UNREAD = 1;
     private String id; // 主键
@@ -93,4 +99,13 @@ public class ChatRecordInfo {
         this.noticeTime = noticeTime;
     }
 
+    @Override
+    public int compareTo(@NonNull Object o) {
+        Date date1 = DateUtil.str2Date(this.getNoticeTime(), Constant.MIDTIME_FORMART);
+        Date date2 = DateUtil.str2Date(((ChatRecordInfo)o).getNoticeTime(), Constant.MIDTIME_FORMART);
+        if (date1.before(date2)) {
+            return 1;
+        }
+        return -1;
+    }
 }

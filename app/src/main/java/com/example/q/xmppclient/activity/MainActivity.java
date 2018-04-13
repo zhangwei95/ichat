@@ -84,7 +84,6 @@ public class MainActivity extends ActivityBase {
     TextView tv_nickname, tv_username, tv_place, tv_sign;
     //FriendList
     View FriendListView;
-    List<User> userList ;
     private ListView friendListView;
     private LinearLayout ll_useradd;
     private LinearLayout ll_groupadd;
@@ -97,7 +96,7 @@ public class MainActivity extends ActivityBase {
     private ContacterReceiver receiver = null;
     private NoticeAdapter noticeAdapter = null;
     private RecentChatAdapter recentChatAdapter;
-    private List<ChatRecordInfo> inviteNotices = new ArrayList<ChatRecordInfo>();
+    private List<ChatRecordInfo> inviteNotices =null;
 
     @Override
     protected void onPause() {
@@ -115,23 +114,12 @@ public class MainActivity extends ActivityBase {
 
     @Override
     protected void onResume() {
-        if(!XmppConnectionManager.getInstance().getConnection().isConnected()){
-            LoginTask loginTask=new LoginTask(this,loginConfig);
-            loginTask.execute();
-        }
-        initPersonInfo();
+//        if(!XmppConnectionManager.getInstance().getConnection().isConnected()) {
+//            LoginTask loginTask = new LoginTask(this, loginConfig);
+//            loginTask.execute();
+//        }
         inviteNotices=null;
         inviteNotices = new ArrayList<ChatRecordInfo>();
-//        for(Notice item : noticeManager.getNoticeListByTypeAndPage(Notice.UNREAD))
-//        {
-//            ChatRecordInfo newNotice=new ChatRecordInfo();
-//            newNotice.setContent(item.getContent());
-//            newNotice.setFrom(item.getFrom());
-//            newNotice.setNoticeTime(item.getNoticeTime());
-//            newNotice.setTitle(item.getTitle());
-//            newNotice.setStatus(item.getStatus());
-//            inviteNotices.add(newNotice);
-//        }
         for (ChatRecordInfo item : messageMgr.getRecentContactsWithLastMsg()) {
             inviteNotices.add(item);
         }
@@ -145,21 +133,11 @@ public class MainActivity extends ActivityBase {
                     return 1;
                 }
                 return -1;
-//                return o2.getNoticeTime().compareTo(o1.getNoticeTime());
             }
         });
         recentChatAdapter = new RecentChatAdapter(MainActivity.this,
                 R.layout.recent_chat_item, inviteNotices);
         RecentChatListView.setAdapter(recentChatAdapter);
-        // 注册广播接收器
-        IntentFilter filter = new IntentFilter();
-        // 好友请求
-        filter.addAction(Constant.ROSTER_SUBSCRIPTION);
-        filter.addAction(Constant.ACTION_SYS_MSG);
-        filter.addAction(Constant.NEW_MESSAGE_ACTION);
-        filter.addAction(Constant.REFRESH_UI);
-        registerReceiver(receiver, filter);
-
         super.onResume();
     }
 
@@ -174,7 +152,6 @@ public class MainActivity extends ActivityBase {
         viewList.add(FriendListView);
         viewList.add(PersonalInfoView);
         navigation = (BottomNavigationView) findViewById(R.id.navigation);
-
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         //默认 >3 的选中效果会影响ViewPager的滑动切换时的效果，故利用反射去掉
         BottomNavigationViewHelper.disableShiftMode(navigation);
@@ -186,7 +163,6 @@ public class MainActivity extends ActivityBase {
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
             }
-
             @Override
             public void onPageSelected(int position) {
                 if (menuItem != null) {
@@ -286,11 +262,8 @@ public class MainActivity extends ActivityBase {
     }
 
     public void initFriendList() {
-        userList=new ArrayList<User>();
-        userList=ContacterManager.getContacterList();
-        Collections.sort(userList);
         friendadapter = new FriendAdapter(MainActivity.this,
-                R.layout.friend_list_item,userList);
+                R.layout.friend_list_item,ContacterManager.getBothContacterList());
         friendListView = (ListView) FriendListView.findViewById(R.id.listview_FriendList);
         friendListView.setAdapter(friendadapter);
         friendListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -313,21 +286,21 @@ public class MainActivity extends ActivityBase {
      * @author zw
      */
     public void initRecentChatInfo() {
-        receiver = new ContacterReceiver();
+        inviteNotices=new ArrayList<ChatRecordInfo>();
         RecentChatListView = (ListView) ChatRecentView.findViewById(R.id.listview_chatList);
-        for (Notice item : noticeManager.getNoticeListByTypeAndPage(Notice.UNREAD)) {
-            ChatRecordInfo newNotice = new ChatRecordInfo();
-            newNotice.setContent(item.getContent());
-            newNotice.setFrom(item.getFrom());
-            newNotice.setNoticeTime(item.getNoticeTime());
-            newNotice.setTitle(item.getTitle());
-            newNotice.setStatus(item.getStatus());
-            inviteNotices.add(newNotice);
-        }
+//        for (Notice item : noticeManager.getNoticeListByTypeAndPage(Notice.UNREAD)) {
+//            ChatRecordInfo newNotice = new ChatRecordInfo();
+//            newNotice.setContent(item.getContent());
+//            newNotice.setFrom(item.getFrom());
+//            newNotice.setNoticeTime(item.getNoticeTime());
+//            newNotice.setTitle(item.getTitle());
+//            newNotice.setStatus(item.getStatus());
+//            inviteNotices.add(newNotice);
+//        }
         for (ChatRecordInfo item : messageMgr.getRecentContactsWithLastMsg()) {
             inviteNotices.add(item);
         }
-
+        Collections.sort(inviteNotices);
         recentChatAdapter = new RecentChatAdapter(context, R.layout.recent_chat_item,
                 inviteNotices);
         RecentChatListView.setAdapter(recentChatAdapter);
@@ -424,10 +397,6 @@ public class MainActivity extends ActivityBase {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        if("edit".equals(intent.getStringExtra("action")))
-        {
-            initPersonInfo();
-        }
     }
 
     @Override
@@ -439,41 +408,38 @@ public class MainActivity extends ActivityBase {
 //        loginConfig.setXmppPort(5222);
 //        saveLoginConfig(loginConfig);
         XmppConnectionManager.getInstance().init(loginConfig);
+        //
         if (!StringUtil.notEmpty(loginConfig.getUsername())
                 ||!StringUtil.notEmpty(loginConfig.getPassword())){
             Intent intent=new Intent(this,LoginActivity.class);
             startActivity(intent);
             finish();
         }else {
-            LoginTask loginTask=new LoginTask(this,loginConfig){
-                @Override
-                protected void onPostExecute(Integer result) {
-                    super.onPostExecute(result);
-                    switch (result) {
-                        case Constant.LOGIN_SUCCESS:
-                            Toast.makeText(context, Constant.LOGIN_SUCCESS_MESSAGE, Toast.LENGTH_SHORT).show();
-                            loginConfig=getLoginConfig();
-                            onResume();
-                            break;
-                        case Constant.LOGIN_ERROR:
-                            Toast.makeText(context,Constant.LOGIN_ERROR_MESSAGE, Toast.LENGTH_SHORT).show();
-                            break;
-                        case Constant.SERVER_UNAVAILABLE:
-                            Toast.makeText(context,Constant.SERVER_UNAVAILABLE_MESSAGE, Toast.LENGTH_SHORT).show();
-                            break;
-                        case Constant.USERNAME_PWD_ERROR:
-                            Toast.makeText(context,Constant.USERNAME_PWD_ERROR_MESSAGE, Toast.LENGTH_SHORT).show();
-                            break;
-                        case Constant.UNKNOWN:
-                            Toast.makeText(context,Constant.UNKNOWN_MESSAGE, Toast.LENGTH_SHORT).show();
-                            break;
-                        default:
-                            break;
-                    }
-                    super.onPostExecute(result);
-                }
-            };
+            LoginTask loginTask=new LoginTask(this,loginConfig);
             loginTask.execute();
+            // 注册广播接收器
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Constant.ROSTER_ADDED);
+
+            filter.addAction(Constant.ROSTER_DELETED);
+
+            filter.addAction(Constant.ROSTER_PRESENCE_CHANGED);
+
+            filter.addAction(Constant.ROSTER_UPDATED);
+            // 好友请求
+            filter.addAction(Constant.ROSTER_SUBSCRIPTION);
+            //系统消息(暂时没用到)
+            filter.addAction(Constant.ACTION_SYS_MSG);
+            //新消息
+            filter.addAction(Constant.NEW_MESSAGE_ACTION);
+            //离线消息
+            filter.addAction(Constant.GET_OFFLINEMSG);
+            //更新个人信息
+            filter.addAction(Constant.REFRESH_PERSONALINFO);
+            //登录失败
+            filter.addAction(Constant.LOGIN_FAILED);
+            receiver = new ContacterReceiver();
+            registerReceiver(receiver, filter);
             ContacterManager.init(this,XmppConnectionManager.getInstance()
                     .getConnection());
             messageMgr=MessageManager.getInstance(context);
@@ -621,16 +587,56 @@ public class MainActivity extends ActivityBase {
                 //todo 刷新recentChatInfo
                 Notice notice = (Notice) intent.getSerializableExtra("notice");
                 // String action = intent.getAction();
-//            inviteNotices.add(notice);
+                //inviteNotices.add(notice);
                 msgReceive(notice);
-                refresh();
-            }else if(Constant.REFRESH_UI.equals(intent.getAction())){
+//                refresh();
+            }else if(Constant.GET_OFFLINEMSG.equals(intent.getAction())){
                 //todo 刷新recentChatInfo
-                onResume();
-            }else if(Constant.ROSTER_SUBSCRIPTION.equals(intent.getAction())){
-                //todo 刷新FriendList界面
-
+                inviteNotices=null;
+                inviteNotices = new ArrayList<ChatRecordInfo>();
+                for (ChatRecordInfo item : messageMgr.getRecentContactsWithLastMsg()) {
+                    inviteNotices.add(item);
+                }
+                //按时间早晚排序
+                Collections.sort(inviteNotices);
+                recentChatAdapter = new RecentChatAdapter(MainActivity.this,
+                        R.layout.recent_chat_item, inviteNotices);
+                RecentChatListView.setAdapter(recentChatAdapter);
+            }else if(Constant.REFRESH_PERSONALINFO.equals(intent.getAction())){
+                tv_username.setText(currentUser.getUsername());
+                tv_nickname.setText(currentUser.getNickName());
+                image.setImageBitmap(currentUser.getIcon());
+                if (StringUtil.empty(currentUser.getSign()))
+                    tv_sign.setText("还未设置签名哦！");
+                else
+                    tv_sign.setText(currentUser.getSign());
+                if(StringUtil.empty(currentUser.getCountry())) {
+                    tv_place.setText("还未设置地区哦！");
+                }else if("中国".equals(currentUser.getCountry()))
+                {
+                    tv_place.setText(loginConfig.getProvince()+" "+loginConfig.getCity());
+                }else
+                {
+                    tv_place.setText(loginConfig.getCountry());
+                }
+            }else if(Constant.LOGIN_FAILED.equals(intent.getAction())){
+                if(!XmppConnectionManager.getInstance().getConnection().isConnected()){
+                    LoginTask loginTask=new LoginTask(MainActivity.this,loginConfig);
+                    loginTask.execute();
+                }
+            }else if(Constant.ROSTER_ADDED.equals(intent.getAction())||
+                    Constant.ROSTER_DELETED.equals(intent.getAction())||
+                    Constant.ROSTER_UPDATED.equals(intent.getAction())||
+                    Constant.ROSTER_PRESENCE_CHANGED.equals(intent.getAction())){
+                friendadapter=new FriendAdapter(context,R.layout.friend_list_item,
+                        ContacterManager.getBothContacterList());
+                friendListView.setAdapter(friendadapter);
+                friendadapter.notifyDataSetChanged();
             }
+//            else if(Constant.ROSTER_SUBSCRIPTION.equals(intent.getAction())){
+//                //todo 刷新FriendList界面
+//                friendadapter.notifyDataSetChanged();
+//            }
 
         }
     }
@@ -639,40 +645,29 @@ public class MainActivity extends ActivityBase {
      * 有新消息进来
      */
     protected void msgReceive(Notice notice) {
-        int checkadd = 0;
-        for (ChatRecordInfo ch : inviteNotices) {
-            if (ch.getFrom().equals(notice.getFrom())) {
-                ch.setContent(notice.getContent());
-                ch.setNoticeTime(notice.getNoticeTime());
-                Integer x = ch.getNoticeSum() == null ? 0 : ch.getNoticeSum();
-                ch.setNoticeSum(x + 1);
-                checkadd++;
+        boolean isNew=true;
+        if(notice!=null){
+            for (ChatRecordInfo ch : inviteNotices) {
+                if (ch.getFrom().equals(notice.getFrom())) {
+                    ch.setContent(notice.getContent());
+                    ch.setNoticeTime(notice.getNoticeTime());
+                    Integer x = ch.getNoticeSum() == null ? 0 : ch.getNoticeSum();
+                    ch.setNoticeSum(x + 1);
+                    isNew=false;
+                }
+            }
+            if(isNew){
+                ChatRecordInfo newMsg=new ChatRecordInfo();
+                newMsg.setFrom(notice.getFrom());
+                newMsg.setContent(notice.getContent());
+                newMsg.setNoticeTime(notice.getNoticeTime());
+                newMsg.setTitle(notice.getTitle());
+                newMsg.setNoticeType(notice.getStatus());
+                newMsg.setNoticeSum(1);
+                inviteNotices.add(newMsg);
             }
         }
-        //不在最近联系人列表内的notice，生成新的chatrecordInfo加到列表里
-//        if (checkadd==0)
-//        {
-//            ChatRecordInfo newNotice=new ChatRecordInfo();
-//            newNotice.setContent(notice.getContent());
-//            newNotice.setFrom(notice.getFrom());
-//            newNotice.setNoticeTime(notice.getNoticeTime());
-//            newNotice.setTitle(notice.getTitle());
-//            newNotice.setStatus(notice.getStatus());
-//            inviteNotices.add(newNotice);
-//        }
-        Collections.sort(inviteNotices, new Comparator<ChatRecordInfo>() {
-            @Override
-            public int compare(ChatRecordInfo o1, ChatRecordInfo o2) {
-                Date date1 = DateUtil.str2Date(o1.getNoticeTime(), Constant.MIDTIME_FORMART);
-                Date date2 = DateUtil.str2Date(o2.getNoticeTime(), Constant.MIDTIME_FORMART);
-                if (date1.before(date2)) {
-                    return 1;
-                }
-                return -1;
-//                return o2.getNoticeTime().compareTo(o1.getNoticeTime());
-            }
-        });
-        recentChatAdapter.setNoticeList(inviteNotices);
+        Collections.sort(inviteNotices);
         recentChatAdapter.notifyDataSetChanged();
     }
 
@@ -813,7 +808,6 @@ public class MainActivity extends ActivityBase {
         XmppConnectionManager.getInstance().getConnection()
                 .sendPacket(presence);
     }
-
 
         @Override
         public void onBackPressed(){

@@ -50,7 +50,7 @@ public class AppUtil {
         }
         //在本地缓存图片
         String fileName = "avatar_" +StringUtil.getJidByName
-                (loginConfig.getUsername(),loginConfig.getServerName())+".png";
+                (loginConfig.getUsername().toLowerCase(),loginConfig.getServerName())+".png";
         byte[] bytes=null;
         try {
             if (!dirfile.exists()) {
@@ -105,7 +105,7 @@ public class AppUtil {
             return null;
         }
         //在本地缓存图片
-        String fileName = "avatar_" +jid+".png";
+        String fileName = "avatar_" +jid.toLowerCase()+".png";
         byte[] bytes=null;
         try {
             if (!dirfile.exists()) {

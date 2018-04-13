@@ -27,6 +27,8 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 
+import org.jivesoftware.smack.packet.RosterPacket;
+
 
 public class FormatUtil {
     private static FormatUtil tools = new FormatUtil();
@@ -56,6 +58,37 @@ public class FormatUtil {
                 || "null".equalsIgnoreCase(o.toString().trim())
                 || "undefined".equalsIgnoreCase(o.toString().trim());
     }
+
+    public static RosterPacket.ItemType string2ItemType(String str){
+        switch (str){
+            case "to":
+                return RosterPacket.ItemType.to;
+            case "from":
+                return RosterPacket.ItemType.from;
+            case "none":
+                return RosterPacket.ItemType.none;
+            case "remove":
+                return RosterPacket.ItemType.remove;
+            case "both":
+                return RosterPacket.ItemType.both;
+            default:
+                return RosterPacket.ItemType.none;
+        }
+    }
+    public static String ItemType2string(RosterPacket.ItemType str){
+        if(str== RosterPacket.ItemType.both){
+            return  "both";
+        }else if(str== RosterPacket.ItemType.to){
+            return  "to";
+        }else if(str== RosterPacket.ItemType.from){
+            return  "from";
+        }else if(str== RosterPacket.ItemType.none){
+            return  "none";
+        }else
+            return "remove";
+
+    }
+
 
     // 将byte[]转换成InputStream
     public static InputStream Byte2InputStream(byte[] b) {

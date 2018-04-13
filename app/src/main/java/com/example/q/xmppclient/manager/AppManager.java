@@ -28,7 +28,9 @@ public class AppManager extends Application {
 
     // 遍历所有Activity并finish
     public void exit() {
-        XmppConnectionManager.getInstance().disconnect();
+        if(XmppConnectionManager.getInstance().getConnection().isConnected()) {
+            XmppConnectionManager.getInstance().disconnect();
+        }
         for (Activity activity : activityList) {
             activity.finish();
         }

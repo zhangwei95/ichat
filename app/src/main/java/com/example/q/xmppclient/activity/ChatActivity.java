@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,6 +21,7 @@ import android.widget.Toast;
 
 import com.example.q.xmppclient.R;
 import com.example.q.xmppclient.adapter.MessageListAdapter;
+import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.entity.ChatMessage;
 import com.example.q.xmppclient.entity.MessageList;
 import com.example.q.xmppclient.entity.Notice;
@@ -151,12 +153,13 @@ public class ChatActivity extends AChatActivity  {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (count>0)
+
+                if (s.length()>0)
                 {
                     BtnMsgSend.setVisibility(View.VISIBLE);
                     iv_addicon.setVisibility(View.INVISIBLE);
                 }
-                if (count==0)
+                if (s.length()==0)
                 {
                     BtnMsgSend.setVisibility(View.INVISIBLE);
                     iv_addicon.setVisibility(View.VISIBLE);

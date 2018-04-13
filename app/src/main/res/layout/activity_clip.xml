@@ -33,11 +33,11 @@
             android:textColor="@color/white"
             android:background="@drawable/btn_save_clip"
             android:visibility="visible"
-            android:textSize="40px"
+            android:textSize="32px"
             android:text="裁剪"
             android:layout_marginRight="10dp"
             android:layout_width="60dp"
-            android:layout_height="30dp"/>
+            android:layout_height="35dp"/>
     </android.support.v7.widget.Toolbar>
 </RelativeLayout>
 

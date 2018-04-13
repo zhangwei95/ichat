@@ -38,7 +38,6 @@ public abstract class AChatActivity extends ActivityBase {
     protected static int pagenum = 1;
     protected  static XmppConnectionManager xmppConnectionManager;
     protected static XMPPConnection xmppConnection;
-//    private List<Notice> noticeList;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,8 +46,11 @@ public abstract class AChatActivity extends ActivityBase {
         to = getIntent().getStringExtra("to");
         xmppConnectionManager=XmppConnectionManager.getInstance();
         xmppConnection=xmppConnectionManager.getConnection();
-//        chatUser = ContacterManager.getByUserJid(this,to,xmppConnection);
-        chatUser=ContacterManager.getUserByJidSql(to);
+        if(xmppConnection.isConnected()){
+            chatUser = ContacterManager.getByUserJid(to,xmppConnection);
+        }else{
+            chatUser=ContacterManager.getUserByJidSql(to);
+        }
         if (to == null)
             return;
         chatman=xmppConnection.getChatManager();
@@ -62,7 +64,11 @@ public abstract class AChatActivity extends ActivityBase {
         to = getIntent().getStringExtra("to");
         xmppConnectionManager=XmppConnectionManager.getInstance();
         xmppConnection=xmppConnectionManager.getConnection();
-        chatUser=ContacterManager.getUserByJidSql(to);
+        if(xmppConnection.isConnected()){
+            chatUser = ContacterManager.getByUserJid(to,xmppConnection);
+        }else{
+            chatUser=ContacterManager.getUserByJidSql(to);
+        }
         if (to == null)
             return;
         chatman=xmppConnection.getChatManager();
@@ -170,10 +176,20 @@ public abstract class AChatActivity extends ActivityBase {
         super.onPause();
         // 更新某人所有通知
         NoticeManager.getInstance(context).updateStatusByFrom(to, Notice.READ);
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        if(receiver!=null){
+            unregisterReceiver(receiver);
+        }
         chat=null;
         chatman=null;
         xmppConnectionManager=null;
         xmppConnection=null;
+        message_pool=null;
+        super.onDestroy();
     }
 
     @Override

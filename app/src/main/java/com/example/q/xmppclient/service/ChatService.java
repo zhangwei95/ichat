@@ -19,6 +19,7 @@ import com.example.q.xmppclient.manager.MessageManager;
 import com.example.q.xmppclient.manager.NoticeManager;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.util.DateUtil;
+import com.example.q.xmppclient.util.StringUtil;
 
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.XMPPConnection;
@@ -72,7 +73,7 @@ public class ChatService extends Service {
             {
                 ChatMessage msg=new ChatMessage();
                 String time = DateUtil.date2Str(Calendar.getInstance(),
-                        Constant.LONGTIME_FORMART);
+                    Constant.LONGTIME_FORMART);
                 msg.setTime(time);
                 msg.setContent(message.getBody());
                 if (message.getType()==Message.Type.error)
@@ -103,15 +104,13 @@ public class ChatService extends Service {
                 newMessage.setTime(time);
                 MessageManager.getInstance(context).saveChatMessage(newMessage);
                 long noticeId = -1;
-
                 noticeId = noticeManager.saveNotice(notice);
-
                 if (noticeId != -1) {
                     Intent intent = new Intent(Constant.NEW_MESSAGE_ACTION);
                     intent.putExtra(ChatMessage.IMMESSAGE_KEY, msg);
                     intent.putExtra("notice", notice);
                     sendBroadcast(intent);
-                    setNotiType(R.drawable.icon,
+                    setNotiType(R.mipmap.i_chat,
                             getResources().getString(R.string.new_message),
                             notice.getContent(), ChatActivity.class, from);
                 }
@@ -165,7 +164,7 @@ public class ChatService extends Service {
                 .setSmallIcon(iconId)
                 .setTicker(contentTitle)
                 .setWhen(System.currentTimeMillis())
-                .setContentTitle(from)
+                .setContentTitle(StringUtil.getUserNameByJid(from))
                 .setContentText(contentText)
                 .setAutoCancel(true)
                 .setDefaults(Notification.DEFAULT_ALL)

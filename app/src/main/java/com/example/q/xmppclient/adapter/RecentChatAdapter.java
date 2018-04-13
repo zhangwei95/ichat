@@ -91,12 +91,9 @@ public class RecentChatAdapter extends BaseAdapter {
         if (ppCount != null && ppCount > 0) {
             holder.paopao.setText(ppCount + "");
             holder.paopao.setVisibility(View.VISIBLE);
-
         } else {
             holder.paopao.setVisibility(View.GONE);
         }
-//        convertView.setOnClickListener(contacterOnClick);
-
         return convertView;
     }
 

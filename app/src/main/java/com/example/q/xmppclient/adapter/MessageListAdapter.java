@@ -43,7 +43,6 @@ public class MessageListAdapter extends BaseAdapter {
         this.items = items;
         this.adapterList = adapterList;
         this.pagesize=psize;
-
     }
 
     public void refreshList(List<ChatMessage> items) {
@@ -115,14 +114,7 @@ public class MessageListAdapter extends BaseAdapter {
             userIcon.setImageBitmap(MainActivity.currentUser.getIcon());
             dateView.setText(DateUtil.LongDate2Short(message.getTime()));
             msgView.setText(message.getContent());
-//            userIcon.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    Intent intent=new Intent(context,UserInfoActivity.class);
-//                    intent.putExtra("to",message.getFromSubJid());
-//                    context.startActivity(intent);
-//                }
-//            });
+
         }
         return convertView;
     }

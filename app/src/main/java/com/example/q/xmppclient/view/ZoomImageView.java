@@ -495,7 +495,6 @@ public class ZoomImageView extends ImageView implements ScaleGestureDetector.OnS
      */
     private void checkBorder()
     {
-
         RectF rect = getMatrixRectF();
         float deltaX = 0;
         float deltaY = 0;
@@ -534,12 +533,9 @@ public class ZoomImageView extends ImageView implements ScaleGestureDetector.OnS
      */
     private void checkBorderAndCenterWhenScale()
     {
-
         RectF rect = getMatrixRectF();
-
         float deltaX = 0;
         float deltaY = 0;
-
         int width = getWidth();
         int height = getHeight();
 

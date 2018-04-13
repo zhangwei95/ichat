@@ -2,7 +2,12 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="AppTheme.Base">
     </style>
-
+    <style name="launchTheme" parent="AppTheme">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowContentOverlay">@color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:screenOrientation">portrait</item>
+    </style>
     <style name="AppTheme.Base" parent="Theme.AppCompat.Light.NoActionBar">
     </style>
 
@@ -52,5 +57,8 @@
         <item name="DialogTitleText">正在保存…</item>
         <item name="DialogSpotColor">@android:color/holo_orange_dark</item>
         <item name="DialogSpotCount">4</item>
+    </style>
+    <style name="EditView" parent="AppTheme.Base">
+        <item name="android:colorForeground">@color/gary</item>
     </style>
 </resources>

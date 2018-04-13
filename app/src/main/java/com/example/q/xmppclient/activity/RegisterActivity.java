@@ -50,6 +50,7 @@ public class RegisterActivity extends ActivityBase {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String editable = et_nickname.getText().toString();
+                //输入过滤
                 String str = StringUtil.stringFilter(editable.toString());
                 if (!editable.equals(str)) {
                     et_nickname.setText(str);
@@ -78,12 +79,12 @@ public class RegisterActivity extends ActivityBase {
                     showToast("用户名不能为空！");
                 }else
                 {
-                    if(FormatUtil.isNumeric(username))
+                    if(ValidataUtil.validateUsername(et_username))
                     {
-                        showToast("用户名不能为纯数字！");
-                    }else {
                         loginConfig.setUsername(username);
                         count++;
+                    }else {
+                        showToast("用户名不符合要求！");
                     }
                 }
                 if(ValidataUtil.isEmpty(et_pwd,"密码"))
@@ -91,8 +92,10 @@ public class RegisterActivity extends ActivityBase {
                     showToast("密码不能为空！");
                 }else
                 {
-                    loginConfig.setPassword(pwd);
-                    count++;
+                    if(ValidataUtil.validatePwd(et_pwd)){
+                        loginConfig.setPassword(pwd);
+                        count++;
+                    }
                 }
                 if(ValidataUtil.isEmpty(et_confirm_pwd,"确认密码"))
                 {

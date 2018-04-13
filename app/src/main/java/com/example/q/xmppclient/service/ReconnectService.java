@@ -12,8 +12,10 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.q.xmppclient.activity.MainActivity;
 import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
+import com.example.q.xmppclient.task.LoginTask;
 
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
@@ -39,7 +41,6 @@ public class ReconnectService extends Service {
         throw new UnsupportedOperationException("Not yet implemented");
     }
     BroadcastReceiver reConnectionBroadcastReceiver = new BroadcastReceiver() {
-
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -75,22 +76,27 @@ public class ReconnectService extends Service {
     public void reConnect(XMPPConnection connection) {
         try {
             connection.connect();
+        } catch (XMPPException e) {
+            Log.e("ERROR", "XMPP连接失败!", e);
+            Toast.makeText(context,Constant.RECONECT_FAILED, Toast.LENGTH_LONG).show();
+            reConnect(connection);
+        }
             if (connection.isConnected()) {
+                LoginTask.getOfflineMsg(context, MainActivity.currentUser.getUsername());
+                Intent sendFreshUI=new Intent(Constant.GET_OFFLINEMSG);
+                sendBroadcast(sendFreshUI);
                 Presence presence = new Presence(Presence.Type.available);
                 connection.sendPacket(presence);
                 Toast.makeText(context, "用户已上线!", Toast.LENGTH_LONG).show();
             }
-        } catch (XMPPException e) {
-            Log.e("ERROR", "XMPP连接失败!", e);
-            reConnect(connection);
-        }
+
     }
     private void sendInentAndPre(boolean isSuccess) {
         Intent intent = new Intent();
         SharedPreferences preference = getSharedPreferences(Constant.LOGIN_SET,
                 0);
         // 保存在线连接信息
-        preference.edit().putBoolean(Constant.IS_ONLINE, isSuccess).commit();
+        preference.edit().putBoolean(Constant.IS_ONLINE, isSuccess).apply();
         intent.setAction(Constant.ACTION_RECONNECT_STATE);
         intent.putExtra(Constant.RECONNECT_STATE, isSuccess);
         sendBroadcast(intent);

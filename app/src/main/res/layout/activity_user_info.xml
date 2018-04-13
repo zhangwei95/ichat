@@ -209,11 +209,28 @@
                 android:textColor="@color/white"/>
         </LinearLayout>
         <LinearLayout
-            android:id="@+id/ll_confirmPass"
+            android:id="@+id/ll_waitingValidate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="visible">
+            <Button
+                android:id="@+id/userinfo_btn_Waiting"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_margin="10dp"
+                android:background="@drawable/shape_gray"
+                android:text="等待验证"
+                android:textSize="18sp"
+                android:clickable="false"
+                android:textColor="@color/white"/>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/ll_confirmPass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
             <Button
                 android:id="@+id/userinfo_btn_PassCheck"
                 android:layout_width="match_parent"

@@ -2,6 +2,7 @@
 <LinearLayout android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/login_bg"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <android.support.v7.widget.Toolbar
@@ -18,8 +19,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingTop="80dp"
-        android:paddingBottom="40dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
         >
         <TextView
             android:id="@+id/tv_username"
@@ -37,6 +38,7 @@
             android:hint="请输入用户名"
             android:digits="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
             android:maxLength="16"
+            android:singleLine="true"
             android:textSize="23dp"
             android:paddingLeft="10dp"
             />
@@ -46,7 +48,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingBottom="40dp"
+        android:paddingBottom="20dp"
         >
         <TextView
             android:layout_width="wrap_content"
@@ -64,6 +66,7 @@
             android:inputType="textPassword"
             android:digits="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
             android:maxLength="16"
+            android:singleLine="true"
             android:textSize="23dp"
             android:paddingLeft="10dp"
             />
@@ -73,7 +76,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingBottom="40dp"
+        android:paddingBottom="20dp"
         >
         <TextView
             android:layout_width="wrap_content"
@@ -91,6 +94,7 @@
             android:inputType="textPassword"
             android:digits="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
             android:maxLength="16"
+            android:singleLine="true"
             android:textSize="23dp"
             android:paddingLeft="10dp"
             />
@@ -100,7 +104,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingBottom="40dp"
+        android:paddingBottom="10dp"
         >
         <TextView
             android:layout_width="wrap_content"
@@ -116,6 +120,7 @@
             android:layout_marginLeft="20dp"
             android:hint="不填默认为用户名"
             android:textSize="23dp"
+            android:singleLine="true"
             android:paddingLeft="10dp"
             />
     </LinearLayout>
@@ -124,8 +129,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-
-        android:paddingBottom="20dp"
         >
     <Button
         android:id="@+id/btn_register"

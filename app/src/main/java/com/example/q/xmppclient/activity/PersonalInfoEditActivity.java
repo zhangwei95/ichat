@@ -24,9 +24,11 @@ import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.manager.LoginConfig;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.task.SetVcardTask;
+import com.example.q.xmppclient.util.FormatUtil;
 import com.example.q.xmppclient.util.StringUtil;
 
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.packet.VCard;
 
 import java.io.File;
@@ -187,7 +189,15 @@ public class PersonalInfoEditActivity extends ActivityBase {
 
             try {
                 vCard.save(XmppConnectionManager.getInstance().getConnection());
+                Presence subscription = new Presence(Presence.Type.available);
+                XmppConnectionManager.getInstance().getConnection()
+                        .sendPacket(subscription);
                 saveLoginConfig(loginConfig);
+                MainActivity.currentUser.setNickName(loginConfig.getNickname());
+                MainActivity.currentUser.setSign(loginConfig.getSign());
+                MainActivity.currentUser.setProvince(loginConfig.getProvince());
+                MainActivity.currentUser.setCity(loginConfig.getCity());
+                MainActivity.currentUser.setCountry(loginConfig.getCountry());
                 return true;
             } catch (XMPPException e) {
                 return false;
@@ -200,21 +210,32 @@ public class PersonalInfoEditActivity extends ActivityBase {
             dialog.dismiss();
             if (bool) {
                 dialog=new SpotsDialog(context,"保存成功",R.style.Custom);
+                dialog.show();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                        Intent updateIntent=new Intent();
+                        updateIntent.setAction(Constant.REFRESH_PERSONALINFO);
+                        sendBroadcast(updateIntent);
+                        Intent intent = new Intent(PersonalInfoEditActivity.this, MainActivity.class);
+                        startActivity(intent);
+                    }
+                },500);
             }else
             {
                 dialog=new SpotsDialog(context, "保存失败",R.style.Custom);
+                dialog.show();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                    }
+                },500);
             }
-            dialog.show();
-            Timer timer=new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    dialog.dismiss();
-                    Intent intent = new Intent(PersonalInfoEditActivity.this, MainActivity.class);
-                    intent.putExtra("action", "edit");
-                    startActivity(intent);
-                }
-            },500);
+
 
         }
 

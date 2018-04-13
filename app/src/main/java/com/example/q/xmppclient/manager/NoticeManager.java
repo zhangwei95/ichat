@@ -35,11 +35,9 @@ public class NoticeManager {
     }
 
         public static NoticeManager getInstance(Context context) {
-
             if (noticeManager == null) {
                 noticeManager = new NoticeManager(context);
             }
-
             return noticeManager;
         }
 

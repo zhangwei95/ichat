@@ -59,8 +59,9 @@ public class Constant {
     public static final String PROVINCE = "province";// 省份
     public static final String CITY = "city";// 城市
     public static final String SIGN = "sign";// 签名
-    public static final String AVATAR = "avatar";// 签名
-
+    public static final String AVATAR = "avatar";// 头像
+    public static final String ITEMTYPE = "itemType";// 审核状态
+    public static final String MODIFY ="modify";//信息是否修改 1是 0否
     /**
      * 登录结果result
      */
@@ -76,8 +77,9 @@ public class Constant {
     public static  final String LOGIN_SUCCESS_MESSAGE="登录成功";
     public static  final String LOGIN_ERROR_MESSAGE="登录失败";
     public static  final String USERNAME_PWD_ERROR_MESSAGE="用户名或密码错误！";
-    public static  final String SERVER_UNAVAILABLE_MESSAGE="找不到对应服务器，请检测网络连接和服务器";
-    ;public static  final String UNKNOWN_MESSAGE="未知错误，连接失败";
+    public static  final String SERVER_UNAVAILABLE_MESSAGE="找不到服务器，请检测网络连接和服务器";
+    public static  final String UNKNOWN_MESSAGE="未知错误，连接失败";
+    public static  final String RECONECT_FAILED="找不到服务器，请检测网络连接和服务器";
 
     /**
      * 注册返回结果
@@ -151,6 +153,10 @@ public class Constant {
      */
     public static final String PREFENCE_USER_STATE = "prefence_user_state";
 
+    //
+    public static  final String GET_OFFLINEMSG="get_offline";
+    public static final String REFRESH_PERSONALINFO="refresh_personal_info";
+    public static  final String LOGIN_FAILED="login_failed";
     //数据库名
     public static  final String DATABASE_NAME="ICHAT";
     /**

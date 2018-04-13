@@ -26,6 +26,7 @@ import com.example.q.xmppclient.util.FormatUtil;
 import com.example.q.xmppclient.util.StringUtil;
 
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.packet.VCard;
 
 import java.io.ByteArrayOutputStream;
@@ -217,9 +218,14 @@ public class AvatarActivity extends ActivityBase {
                 break;
         }
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        dialog=null;
+    }
+
     class SetVcardTask extends AsyncTask<Bitmap, Integer, Boolean> {
-
-
         @Override
         protected void onPreExecute() {
             dialog=new SpotsDialog(context, "正在保存",R.style.Custom);
@@ -229,10 +235,11 @@ public class AvatarActivity extends ActivityBase {
         @Override
         protected Boolean doInBackground(Bitmap... param) {
             VCard vCard = new VCard();
+            if (!XmppConnectionManager.getInstance().getConnection().isConnected())
+                return false;
             try {
                 vCard.load(XmppConnectionManager.getInstance().getConnection());
-            }catch (XMPPException e)
-            {
+            }catch (XMPPException e) {
                 return false;
             }
             // 设置和更新用户信息
@@ -244,6 +251,9 @@ public class AvatarActivity extends ActivityBase {
             }
             try {
                 vCard.save(XmppConnectionManager.getInstance().getConnection());
+                Presence subscription = new Presence(Presence.Type.available);
+                XmppConnectionManager.getInstance().getConnection()
+                        .sendPacket(subscription);
                 return true;
             } catch (XMPPException e) {
                 return false;
@@ -256,21 +266,36 @@ public class AvatarActivity extends ActivityBase {
             dialog.dismiss();
             if (bool) {
                 dialog=new SpotsDialog(context,"保存成功",R.style.Custom);
-            }else
-            {
+                dialog.show();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                        MainActivity.currentUser.setIcon(
+                                FormatUtil.drawable2Bitmap(iv_icon.getDrawable()));
+                        Intent updateIntent=new Intent();
+                        updateIntent.setAction(Constant.REFRESH_PERSONALINFO);
+                        sendBroadcast(updateIntent);
+                        Intent intent = new Intent(AvatarActivity.this, MainActivity.class);
+                        startActivity(intent);
+                    }
+                },500);
+            }else {
                 dialog=new SpotsDialog(context, "保存失败",R.style.Custom);
+                dialog.show();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+//                        Intent intent = new Intent(AvatarActivity.this, MainActivity.class);
+//                        intent.putExtra("action", "edit");
+//                        startActivity(intent);
+                    }
+                },500);
             }
-            dialog.show();
-            Timer timer=new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    dialog.dismiss();
-                    Intent intent = new Intent(AvatarActivity.this, MainActivity.class);
-                    intent.putExtra("action", "edit");
-                    startActivity(intent);
-                }
-            },500);
+
 
         }
 

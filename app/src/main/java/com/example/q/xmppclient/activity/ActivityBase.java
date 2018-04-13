@@ -228,8 +228,6 @@ public class ActivityBase extends AppCompatActivity implements IActivity {
      *
      * 关闭键盘事件
      *
-     * @author shimiso
-     * @update 2012-7-4 下午2:34:34
      */
     public void closeInput() {
         InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);

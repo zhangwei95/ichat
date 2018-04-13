@@ -12,18 +12,20 @@
         android:minHeight="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
         app:popupTheme="@style/popup_theme"
-        android:theme="@style/ToolbarTheme">
+        android:theme="@style/ToolbarTheme"
+        >
+
         <Button
             android:id="@+id/btn_avatar_save"
             android:layout_gravity="right"
             android:textColor="@color/white"
             android:background="@drawable/btn_save_clip"
             android:visibility="gone"
-            android:textSize="40px"
+            android:textSize="32px"
             android:text="保存"
             android:layout_marginRight="10dp"
             android:layout_width="60dp"
-            android:layout_height="30dp"/>
+            android:layout_height="35dp"/>
     </android.support.v7.widget.Toolbar>
         <ImageView
             android:id="@+id/iv_icon"

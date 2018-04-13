@@ -65,31 +65,31 @@ public class RegisterTask extends AsyncTask<String,Integer,Integer> {
         switch (result){
             //todo 注册成功或失败的处理
             case Constant.REGISTER_SUCCESS:
-                AlertDialog.Builder ad=new AlertDialog.Builder(context);
-
-                ad.setTitle("注册成功");
-                ad.setMessage("是否选择直接登录!");
-                ad.setCancelable(false);
-                ad.setPositiveButton("直接登录", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
+//                AlertDialog.Builder ad=new AlertDialog.Builder(context);
+//
+//                ad.setTitle("注册成功");
+//                ad.setMessage("是否选择直接登录!");
+//                ad.setCancelable(false);
+//                ad.setPositiveButton("直接登录", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+                        loginConfig.setNewUser(true);
                         loginConfig.setFirstStart(true);
                         loginConfig.setRemember(true);
                         loginConfig.setAutoLogin(false);
-                        loginConfig.setNewUser(true);
                         LoginTask loginTask=new LoginTask(activityTool,loginConfig);
                         loginTask.execute();
-                    }
-                });
-                ad.setNegativeButton("手动登录", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Intent intent=new Intent();
-                        intent.setClass(context, LoginActivity.class);
-                        context.startActivity(intent);
-                    }
-                });
-                ad.show();
+//                    }
+//                });
+//                ad.setNegativeButton("手动登录", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        Intent intent=new Intent();
+//                        intent.setClass(context, LoginActivity.class);
+//                        context.startActivity(intent);
+//                    }
+//                });
+//                ad.show();
                 break;
             case Constant.USER_EXIST:
                 Toast.makeText(context,Constant.USER_EXIST_MESSAGE,Toast.LENGTH_SHORT).show();
