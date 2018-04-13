@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Environment;
+import android.util.Log;
 
 import com.example.q.xmppclient.R;
 import com.example.q.xmppclient.common.Constant;
@@ -27,6 +28,7 @@ import org.jivesoftware.smack.RosterGroup;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.RosterPacket;
 import org.jivesoftware.smackx.packet.VCard;
 
 import java.io.ByteArrayInputStream;
@@ -35,6 +37,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -51,68 +54,39 @@ public class ContacterManager {
      */
     public static Map<String, User> contacters = null;
 
-    public static void init(Context context,XMPPConnection connection) {
+
+    public static void init(Context context,Connection connection) {
+        Log.e(TAG, "ContactorManagerinit----- "+context.getClass().toString());
         SharedPreferences sharedPre = context.getSharedPreferences(
                 Constant.LOGIN_SET, Context.MODE_PRIVATE);
         String databaseName = sharedPre.getString(Constant.USERNAME, null);
         manager = DBManager.getInstance(context, databaseName);
         contacters = new HashMap<String, User>();
-        SQLiteTemplate st = SQLiteTemplate.getInstance(manager, false);
-
         for (RosterEntry entry : connection.getRoster().getEntries()) {
             //本地如果存在，直接在本地查出来，否则就去服务器上获取并在本地缓存头像
-            if (st.isExistsByField("im_contactors", "jid", entry.getUser())) {
-                contacters.put(entry.getUser(),
-                        getUserByJidSql(entry.getUser()));
-            } else {
-                User user;
-                user = transEntryToUser(entry, connection);
-                String imageDir = Environment.getExternalStorageDirectory()
-                        .getAbsolutePath() +"/ichat/images/";
-                ContentValues values = new ContentValues();
-                values.put(Constant.JID, user.getJid());
-                values.put(Constant.NICKNAME, user.getNickName());
-                values.put(Constant.AVATAR, imageDir + "avatar_" + user.getJid() + ".png");
-                values.put(Constant.COUNTRY,user.getCountry());
-                values.put(Constant.PROVINCE,user.getProvince());
-                values.put(Constant.CITY,user.getCity());
-                values.put(Constant.SIGN,user.getSign());
-                st.insert("im_contactors", values);
-                File dirfile = new File(imageDir);
-                //获取内部存储状态
-                String state = Environment.getExternalStorageState();
-                //如果状态不是mounted，无法读写
-                if (!state.equals(Environment.MEDIA_MOUNTED)) {
-                    return;
-                }
-                    //在本地缓存图片
-                    String fileName = "avatar_" + user.getJid()+".png";
-                    Bitmap mBitmap = user.getIcon();
-                    try {
-                        if (!dirfile.exists()) {
-                            dirfile.mkdirs();
-                        }
-                        File file = new File(imageDir, fileName);
-                        FileOutputStream out = new FileOutputStream(file);
-                        mBitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-                        out.flush();
-                        out.close();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
+                if (isExistInDB(entry.getUser())) {
+                    User user=getUserByJidSql(entry.getUser());
+                    Log.e(TAG, "init----- User  jid="+user.getJid()+"--DBitemtype="+
+                            FormatUtil.ItemType2string(user.getItemType()) );
                     contacters.put(entry.getUser(),
-                            user);
+                            user );
+                } else {
+//                String sql = "select count(*) from im_contactors where jid=? and status='checked'";
+//                if (st.isExistsBySQL(sql, new String[]{entry.getUser()})) {
+                    contacters.put(entry.getUser(),
+                            insertDBFriend(entry, entry.getUser(), connection));
                 }
             }
-        }
+
+    }
     /**
      * 根据用户jid得到用户
      *
      * @param userJId
      */
-    public static User getByUserJid(String userJId, XMPPConnection connection) {
+    public static User getByUserJid(String userJId, Connection connection) {
         Roster roster = connection.getRoster();
-        RosterEntry entry = connection.getRoster().getEntry(userJId);
+        RosterEntry entry = roster.getEntry(userJId);
         if (null == entry) {
             return null;
         }
@@ -123,8 +97,9 @@ public class ContacterManager {
             user.setUsername(entry.getName());
         }
         user.setJid(entry.getUser());
+        user.setItemType(entry.getType());
         System.out.println(entry.getUser());
-        Presence presence = roster.getPresence(entry.getUser());
+//        Presence presence = roster.getPresence(entry.getUser());
         try {
             VCard vCard = new VCard();
             vCard.load(XmppConnectionManager.getInstance().getConnection(),userJId);
@@ -155,13 +130,40 @@ public class ContacterManager {
         List<User> userList = new ArrayList<User>();
         if (contacters == null ||contacters.size()==0) {
             userList=getContacterFromLocal();
+            Collections.sort(userList);
             return userList;
         }
-
-        for (String key : contacters.keySet())
+        for (String key : contacters.keySet()) {
             userList.add(contacters.get(key));
-
-
+        }
+        Collections.sort(userList);
+        return userList;
+    }
+    /**
+     * 获得所有互加联系人列表
+     *
+     * @return
+     */
+    public static List<User> getBothContacterList() {
+        List<User> userList= new ArrayList<User>();
+        for(User user:getContacterList()){
+            if(user.getItemType()== RosterPacket.ItemType.both){
+                userList.add(user);
+            }
+        }
+        return userList;
+    }
+    /**
+     * 获得所有待验证和申请添加的联系人列表
+     */
+    public static List<User> getValidateContacterList() {
+        List<User> userList= new ArrayList<User>();
+        for(User user:getContacterList()){
+            if(user.getItemType()!= RosterPacket.ItemType.both
+                    &&user.getItemType()!= RosterPacket.ItemType.remove){
+                userList.add(user);
+            }
+        }
         return userList;
     }
 
@@ -193,6 +195,8 @@ public class ContacterManager {
                                         .getColumnIndex(Constant.CITY)));
                                 user.setSign(cursor.getString(cursor
                                         .getColumnIndex(Constant.SIGN)));
+                                user.setItemType(FormatUtil.string2ItemType(cursor.getString(cursor
+                                        .getColumnIndex(Constant.ITEMTYPE))));
                                 return user;
                             }
                         },
@@ -201,6 +205,7 @@ public class ContacterManager {
 
         return userList;
     }
+
     /**
      * 获得所有未分组的联系人列表
      *
@@ -208,12 +213,10 @@ public class ContacterManager {
      */
     public static List<User> getNoGroupUserList(Roster roster) {
         List<User> userList = new ArrayList<User>();
-
         // 服务器的用户信息改变后，不会通知到unfiledEntries
         for (RosterEntry entry : roster.getUnfiledEntries()) {
             userList.add(contacters.get(entry.getUser()).clone());
         }
-
         return userList;
     }
     /**
@@ -245,7 +248,7 @@ public class ContacterManager {
      * @param entry
      * @return
      */
-    public static User transEntryToUser(RosterEntry entry,XMPPConnection connection) {
+    public static User transEntryToUser(RosterEntry entry,Connection connection) {
         User user = new User();
         if (entry.getName() == null) {
             user.setUsername(StringUtil.getUserNameByJid(entry.getUser()));
@@ -254,14 +257,12 @@ public class ContacterManager {
         }
         user.setJid(entry.getUser());
         System.out.println(entry.getUser());
-        Presence presence = connection.getRoster().getPresence(entry.getUser());
         user=getByUserJid(entry.getUser(),connection);
 //        user.setFrom(presence.getFrom());
 //        user.setStatus(presence.getStatus());
 //        user.setSize(entry.getGroups().size());
 //        user.setAvailable(presence.isAvailable());
 //        user.setType(entry.getType());
-
         return user;
     }
 
@@ -272,7 +273,7 @@ public class ContacterManager {
      * @param nickname
      */
     public static void setNickname(User user, String nickname,
-                                   XMPPConnection connection) {
+                                   Connection connection) {
         RosterEntry entry = connection.getRoster().getEntry(user.getJid());
 
         entry.setName(nickname);
@@ -284,7 +285,7 @@ public class ContacterManager {
      * @param groupName
      */
     public static void addUserToGroup(final User user, final String groupName,
-                                      final XMPPConnection connection) {
+                                      final Connection connection) {
         if (groupName == null || user == null)
             return;
         // 将一个rosterEntry添加到group中是PacketCollector，会阻塞线程
@@ -318,7 +319,7 @@ public class ContacterManager {
      * @param groupName
      */
     public static void removeUserFromGroup(final User user,
-                                           final String groupName, final XMPPConnection connection) {
+                                           final String groupName, final Connection connection) {
         if (groupName == null || user == null)
             return;
         new Thread() {
@@ -399,7 +400,7 @@ public class ContacterManager {
      * @param connection
      */
     public static void addGroup(final String groupName,
-                                final XMPPConnection connection) {
+                                final Connection connection) {
         if (StringUtil.empty(groupName)) {
             return;
         }
@@ -450,7 +451,113 @@ public class ContacterManager {
                 .removeEntry(entry);
 
     }
+    /**
+     * 从数据库中删除用户
+     * @author zw
+     */
+    public static  int deleteDBFriend(String jid){
+        SQLiteTemplate st = SQLiteTemplate.getInstance(manager, false);
+        return st.deleteByCondition("im_contactors", "jid=?",
+                new String[] { "" + jid });
+    }
+    /**
+     * 判断数据库中是否存在该用户
+     */
+     public static boolean isExistInDB(String jid){
+         SQLiteTemplate st = SQLiteTemplate.getInstance(manager, false);
 
+         return st.isExistsByField("im_contactors", "jid", jid.toLowerCase());
+     }
+
+    /**
+     * 添加一个用户到数据库中
+     */
+    public static User insertDBFriend(RosterEntry entry,String jid,Connection connection){
+        SQLiteTemplate st = SQLiteTemplate.getInstance(manager, false);
+        User user;
+        user = transEntryToUser(entry, (XMPPConnection) connection);
+        String imageDir = Environment.getExternalStorageDirectory()
+                .getAbsolutePath() + "/ichat/images/";
+        ContentValues values = new ContentValues();
+        values.put(Constant.JID, user.getJid());
+        values.put(Constant.NICKNAME, user.getNickName());
+        values.put(Constant.AVATAR, imageDir + "avatar_" + user.getJid() + ".png");
+        values.put(Constant.COUNTRY, user.getCountry());
+        values.put(Constant.PROVINCE, user.getProvince());
+        values.put(Constant.CITY, user.getCity());
+        values.put(Constant.SIGN, user.getSign());
+        values.put(Constant.ITEMTYPE,entry.getType().toString());
+        st.insert("im_contactors", values);
+        File dirfile = new File(imageDir);
+        //获取内部存储状态
+        String state = Environment.getExternalStorageState();
+        //如果状态不是mounted，无法读写
+        if (!state.equals(Environment.MEDIA_MOUNTED)) {
+            return null;
+        }
+        //在本地缓存图片
+        String fileName = "avatar_" + user.getJid().toLowerCase() + ".png";
+        Bitmap mBitmap = user.getIcon();
+        try {
+            if (!dirfile.exists()) {
+                dirfile.mkdirs();
+            }
+            File file = new File(imageDir, fileName);
+            FileOutputStream out = new FileOutputStream(file);
+            mBitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+            out.flush();
+            out.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return user;
+    }
+    /**
+     * 更新一个用户到数据库中
+     */
+    public static User updateDBFriend(RosterEntry entry,String jid,Connection connection){
+        SQLiteTemplate st = SQLiteTemplate.getInstance(manager, false);
+        User user;
+        user = transEntryToUser(entry, (XMPPConnection) connection);
+        String imageDir = Environment.getExternalStorageDirectory()
+                .getAbsolutePath() + "/ichat/images/";
+        ContentValues values = new ContentValues();
+        values.put(Constant.NICKNAME, user.getNickName());
+        values.put(Constant.AVATAR, imageDir + "avatar_" + user.getJid() + ".png");
+        values.put(Constant.COUNTRY, user.getCountry());
+        values.put(Constant.PROVINCE, user.getProvince());
+        values.put(Constant.CITY, user.getCity());
+        values.put(Constant.SIGN, user.getSign());
+        values.put(Constant.ITEMTYPE,FormatUtil.ItemType2string(entry.getType()));
+        st.update("im_contactors", values,"jid=?",new String[]{jid});
+        File dirfile = new File(imageDir);
+        //获取内部存储状态
+        String state = Environment.getExternalStorageState();
+        //如果状态不是mounted，无法读写
+        if (!state.equals(Environment.MEDIA_MOUNTED)) {
+            return null;
+        }
+        //在本地缓存图片
+        String fileName = "avatar_" + user.getJid() + ".png";
+        Bitmap mBitmap = user.getIcon();
+        try {
+            if (!dirfile.exists()) {
+                dirfile.mkdirs();
+            }
+            File file = new File(imageDir, fileName);
+            FileOutputStream out = new FileOutputStream(file);
+            mBitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+            out.flush();
+            out.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        Log.e(TAG, "updateDBFriend: jid="+user.getJid()+"nickname="+user.getNickName()+"itemtype="+
+                FormatUtil.ItemType2string(user.getItemType()));
+        return user;
+    }
+    static String TAG="contactermanager";
     /**
      *
      * 从数据库中通过jid查找User
@@ -476,6 +583,8 @@ public class ContacterManager {
                         .getColumnIndex(Constant.CITY)));
                 user.setSign(cursor.getString(cursor
                         .getColumnIndex(Constant.SIGN)));
+                user.setItemType(FormatUtil.string2ItemType(cursor.getString(cursor
+                        .getColumnIndex(Constant.ITEMTYPE))));
                 try {
                     File avatar=new File(cursor.getString(cursor.getColumnIndex(Constant.AVATAR)));
                     FileInputStream stream = new FileInputStream(avatar);

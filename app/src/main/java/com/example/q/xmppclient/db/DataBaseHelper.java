@@ -19,13 +19,14 @@ public class DataBaseHelper extends SDCardSQLiteOpenHelper{
     Context mContext;
     public static final String Create_contactor="create table if not exists im_contactors("+
             "id integer primary key autoincrement,"+
-            "jid text,"+
+            "jid text unique,"+
             "nickname text,"+
             "avatar text,"+
             "country text,"+
             "province text,"+
             "city text,"+
-            "sign text);";
+            "sign text," +
+            "itemType text);";
     public DataBaseHelper(Context context, String name, SQLiteDatabase.CursorFactory factory,
                           int version) {
         super(context, name, factory, version);

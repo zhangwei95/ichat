@@ -92,6 +92,16 @@ public class User implements Parcelable,Comparable{
     private Date birthday;//
     private Bitmap icon;//头像
     private VCard vcard;//电子名片
+
+    public RosterPacket.ItemType getItemType() {
+        return itemType;
+    }
+
+    public void setItemType(RosterPacket.ItemType itemType) {
+        this.itemType = itemType;
+    }
+
+    private RosterPacket.ItemType itemType;
 //    public String getSex() {
 //        if(sex)
 //            return "man";

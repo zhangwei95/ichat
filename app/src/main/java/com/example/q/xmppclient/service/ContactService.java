@@ -17,6 +17,7 @@ import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.entity.Notice;
 import com.example.q.xmppclient.entity.User;
 import com.example.q.xmppclient.manager.ContacterManager;
+import com.example.q.xmppclient.manager.MessageManager;
 import com.example.q.xmppclient.manager.NoticeManager;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.util.DateUtil;
@@ -26,6 +27,7 @@ import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.Roster;
 import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.RosterListener;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
@@ -37,6 +39,7 @@ public class ContactService extends Service {
     static String TAG="ContactService";
     private Roster roster = null;
     private Context context;
+    String[] group=new String[]{"Friends"};
     /* 声明对象变量 */
     private NotificationManager notificationManager;
     @Override
@@ -45,6 +48,7 @@ public class ContactService extends Service {
         addSubscriptionListener();
         super.onCreate();
     }
+
     @Override
     public IBinder onBind(Intent intent) {
         // TODO: Return the communication channel to the service.
@@ -71,6 +75,10 @@ public class ContactService extends Service {
                 if (packet instanceof Presence) {
                     Presence presence = (Presence) packet;
                     if (presence.getType().equals(Presence.Type.subscribe)) {
+                        Log.e(TAG, "accept: subscribe");
+                        return true;
+                    }
+                    if (presence.getType().equals(Presence.Type.subscribed)) {
                         return true;
                     }
                 }
@@ -92,21 +100,78 @@ public class ContactService extends Service {
                 .getConnection());
     }
     private PacketListener subscriptionPacketListener = new PacketListener() {
-
         @Override
         public void processPacket(Packet packet) {
+            Log.e(TAG, "PacketListener  processPacket: ");
             String user = getSharedPreferences(Constant.LOGIN_SET, 0)
                     .getString(Constant.USERNAME, null);
             if (packet.getFrom().contains(user))
                 return;
-            // 如果是自动接收所有请求，则回复一个添加信息
-            if (Roster.getDefaultSubscriptionMode().equals(
-                    Roster.SubscriptionMode.accept_all)) {
-                Presence subscription = new Presence(Presence.Type.subscribe);
+            Presence presence = (Presence) packet;
+            if(presence.getType().equals(Presence.Type.subscribed)){
+                Presence subscription = new Presence(Presence.Type.available);
                 subscription.setTo(packet.getFrom());
                 XmppConnectionManager.getInstance().getConnection()
                         .sendPacket(subscription);
-            } else {
+                return;
+            }
+            // 如果是自动接收所有请求，则回复一个添加信息
+            if (Roster.getDefaultSubscriptionMode().equals(
+                    Roster.SubscriptionMode.accept_all)) {
+                Log.e(TAG, "processPacket: Roster.getDefaultSubscriptionMode()=accept_all");
+                Presence subscription = new Presence(Presence.Type.subscribed);
+                subscription.setTo(packet.getFrom());
+                XmppConnectionManager.getInstance().getConnection()
+                        .sendPacket(subscription);
+                subscription = new Presence(Presence.Type.subscribe);
+                subscription.setTo(packet.getFrom());
+                XmppConnectionManager.getInstance().getConnection()
+                        .sendPacket(subscription);
+                if(ContacterManager.isExistInDB(packet.getFrom())){
+                    ContacterManager.contacters.remove(packet.getFrom());
+                    ContacterManager.contacters.put(packet.getFrom(),
+                            ContacterManager.transEntryToUser(XmppConnectionManager.getInstance().
+                                            getConnection().getRoster().getEntry(packet.getFrom()),
+                                    XmppConnectionManager.getInstance().getConnection()));
+                    ContacterManager.updateDBFriend(XmppConnectionManager.getInstance().
+                            getConnection().getRoster().getEntry(packet.getFrom()),packet.getFrom(),
+                            XmppConnectionManager.getInstance().getConnection());
+                }else{
+                    ContacterManager.insertDBFriend(XmppConnectionManager.getInstance().
+                                    getConnection().getRoster().getEntry(packet.getFrom()),
+                            packet.getFrom(), XmppConnectionManager.getInstance().getConnection());
+                }
+                subscription = new Presence(Presence.Type.available);
+                subscription.setTo(packet.getFrom());
+                XmppConnectionManager.getInstance().getConnection()
+                        .sendPacket(subscription);
+            } else if(Roster.getDefaultSubscriptionMode().equals(
+                    Roster.SubscriptionMode.manual)){
+                Log.e(TAG, "processPacket: Roster.getDefaultSubscriptionMode()=manual");
+//                Presence subscription = new Presence(Presence.Type.subscribed);
+//                subscription.setTo(packet.getFrom());
+//                XmppConnectionManager.getInstance().getConnection()
+//                        .sendPacket(subscription);
+//                try {
+//                    XmppConnectionManager.getInstance().getConnection().getRoster()
+//                            .createEntry(packet.getFrom(),StringUtil.getUserNameByJid(packet.getFrom()), group);
+//                } catch (XMPPException e) {
+//                    e.printStackTrace();
+//                }
+                if(ContacterManager.isExistInDB(packet.getFrom())){
+                    ContacterManager.contacters.remove(packet.getFrom());
+                    ContacterManager.contacters.put(packet.getFrom(),
+                            ContacterManager.transEntryToUser(XmppConnectionManager.getInstance().
+                                            getConnection().getRoster().getEntry(packet.getFrom()),
+                                    XmppConnectionManager.getInstance().getConnection()));
+                    ContacterManager.updateDBFriend(XmppConnectionManager.getInstance().
+                                    getConnection().getRoster().getEntry(packet.getFrom()),packet.getFrom(),
+                            XmppConnectionManager.getInstance().getConnection());
+                }else{
+                    ContacterManager.insertDBFriend(XmppConnectionManager.getInstance().
+                                    getConnection().getRoster().getEntry(packet.getFrom()),
+                            packet.getFrom(), XmppConnectionManager.getInstance().getConnection());
+                }
                 NoticeManager noticeManager = NoticeManager
                         .getInstance(context);
                 Notice notice = new Notice();
@@ -126,11 +191,18 @@ public class ContactService extends Service {
                     notice.setId("" + noticeId);
                     intent.putExtra("notice", notice);
                     sendBroadcast(intent);
-                    setNotiType(R.drawable.icon, "好友请求",
+                    setNotiType(R.mipmap.i_chat, "好友请求",
                             StringUtil.getUserNameByJid(packet.getFrom())
                                     + "申请加您为好友", UserInfoActivity.class,notice);
+                }else{
+                    //todo 保存通知和发送广播
                 }
-
+            }else if (Roster.getDefaultSubscriptionMode().equals(
+                    Roster.SubscriptionMode.reject_all)){
+                Presence subscription = new Presence(Presence.Type.unsubscribe);
+                subscription.setTo(packet.getFrom());
+                XmppConnectionManager.getInstance().getConnection()
+                        .sendPacket(subscription);
             }
         }
     };
@@ -144,10 +216,8 @@ public class ContactService extends Service {
      * @param contentTitle
      *            标题
      * @param contentText
-     *            你内容
+     *            内容
      * @param activity
-     * @author shimiso
-     * @update 2012-5-14 下午12:01:55
      */
     private void setNotiType(int iconId, String contentTitle,
                              String contentText, Class activity,Notice notice) {
@@ -181,10 +251,11 @@ public class ContactService extends Service {
                 .setContentTitle(contentTitle)
                 .setContentText(contentText)
                 .setAutoCancel(true)
+                .setDefaults(Notification.DEFAULT_ALL)
                 .build();
         notification.contentIntent=appIntent;
 		/* 送出Notification */
-        notificationManager.notify(0, notification);
+        notificationManager.notify(1, notification);
     }
 
     @Override
@@ -199,6 +270,8 @@ public class ContactService extends Service {
 
         @Override
         public void presenceChanged(Presence presence) {
+            Log.e(TAG, "roster Listener presenceChanged: ");
+            //接受到好友状态改变信息，修改contactors
             Intent intent = new Intent();
             intent.setAction(Constant.ROSTER_PRESENCE_CHANGED);
             String subscriber = presence.getFrom().substring(0,
@@ -212,12 +285,17 @@ public class ContactService extends Service {
                 ContacterManager.contacters.put(subscriber,
                         ContacterManager.transEntryToUser(entry,
                                 XmppConnectionManager.getInstance().getConnection()));
+                //todo 好友状态改变，将好友信息更新缓存到本地
+                ContacterManager.updateDBFriend(entry,entry.getUser(),
+                        XmppConnectionManager.getInstance().getConnection());
+
             }
             sendBroadcast(intent);
         }
 
         @Override
         public void entriesUpdated(Collection<String> addresses) {
+            Log.e(TAG, "entriesUpdated: " );
             for (String address : addresses) {
                 Intent intent = new Intent();
                 intent.setAction(Constant.ROSTER_UPDATED);
@@ -234,6 +312,10 @@ public class ContactService extends Service {
                     ContacterManager.contacters.remove(address);
                     ContacterManager.contacters.put(address, user);
                 }
+                //todo 好友状态改变，将好友信息更新缓存到本地
+                ContacterManager.updateDBFriend(userEntry,userEntry.getUser(),
+                        XmppConnectionManager.getInstance().getConnection());
+
                 sendBroadcast(intent);
                 // 用户更新，getEntries会更新
                 // roster.getUnfiledEntries中的entry不会更新
@@ -242,6 +324,7 @@ public class ContactService extends Service {
 
         @Override
         public void entriesDeleted(Collection<String> addresses) {
+            Log.e(TAG, "entriesDeleted: " );
             for (String address : addresses) {
                 Intent intent = new Intent();
                 intent.setAction(Constant.ROSTER_DELETED);
@@ -250,6 +333,10 @@ public class ContactService extends Service {
                     user = ContacterManager.contacters.get(address);
                     ContacterManager.contacters.remove(address);
                 }
+                //todo 删除好友 删除数据库信息
+                ContacterManager.deleteDBFriend(user.getJid());
+                MessageManager.getInstance(context).delChatHisWithSb(user.getJid());
+                NoticeManager.getInstance(context).delNoticeHisWithSb(user.getJid());
                 intent.putExtra(User.userKey, user);
                 sendBroadcast(intent);
             }
@@ -257,6 +344,7 @@ public class ContactService extends Service {
 
         @Override
         public void entriesAdded(Collection<String> addresses) {
+            Log.e(TAG, "entriesAdded: " );
             for (String address : addresses) {
                 Intent intent = new Intent();
                 intent.setAction(Constant.ROSTER_ADDED);
@@ -265,6 +353,9 @@ public class ContactService extends Service {
                         .transEntryToUser(userEntry,
                                 XmppConnectionManager.getInstance().getConnection());
                 ContacterManager.contacters.put(address, user);
+                //todo 添加好友,添加数据库信息
+                ContacterManager.insertDBFriend(userEntry,userEntry.getUser(),
+                        XmppConnectionManager.getInstance().getConnection());
                 intent.putExtra(User.userKey, user);
                 sendBroadcast(intent);
             }

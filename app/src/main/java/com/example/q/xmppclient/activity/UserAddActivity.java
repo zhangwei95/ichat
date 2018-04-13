@@ -54,6 +54,7 @@ public class UserAddActivity extends ActivityBase {
                 if(keyCode==event.KEYCODE_ENTER)
                 {
                     dosearchFriend(et_search.getText().toString());
+                    return true;
                 }
                 return false;
             }

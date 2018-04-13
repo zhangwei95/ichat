@@ -55,7 +55,7 @@ public class XmppConnectionManager {
     }
     public XMPPConnection init(LoginConfig loginConfig)
     {
-        connection.DEBUG_ENABLED=false;
+        connection.DEBUG_ENABLED=true;
         ProviderManager pm=ProviderManager.getInstance();
         configure(pm);
         connectionConfiguration=new ConnectionConfiguration(loginConfig.getXmppIP(),
@@ -69,7 +69,6 @@ public class XmppConnectionManager {
         Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.manual);
         connectionConfiguration.setSecurityMode(ConnectionConfiguration.SecurityMode.enabled);
         connection=new XMPPConnection(connectionConfiguration);
-
         return connection;
     }
     public  XMPPConnection getConnection() {
