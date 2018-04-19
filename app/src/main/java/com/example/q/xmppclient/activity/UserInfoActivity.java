@@ -36,6 +36,8 @@ import org.jivesoftware.smackx.packet.VCard;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Method;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import dmax.dialog.SpotsDialog;
 
@@ -63,10 +65,12 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
     String[] group=new String[]{"Friends"};
     AlertDialog dialog;
     private MenuItem menuItem;
+    Intent intent;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_info);
+
         user=new User();
         initActionBar();
         initUserInfo();
@@ -76,6 +80,7 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        Log.e(TAG, "onNewIntent: ");
         setIntent(intent);
         initUserInfo();
     }
@@ -162,40 +167,50 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
         btn_PassCheck.setOnClickListener(this);
         btn_denyCheck.setOnClickListener(this);
         btn_video.setOnClickListener(this);
+        intent=this.getIntent();
+        jid=intent.getStringExtra("to");
+        itemType=existFriend(jid);
         //判断启动形式
-        if(getIntent().getSerializableExtra("notice")!=null)//点通知进来的
-        {
-            notice=(Notice) getIntent().getSerializableExtra("notice");
-            jid=notice.getFrom();
-            itemType=existFriend(jid);
-//            if(notice.getNoticeType()==notice.ADD_FRIEND)
-//            {
-//                //还没添加的好友
-//                if(!existFriend(jid)){
-//                    isFriend=3;
-//                }else {
-//                    //添加了的好友
-//                    isFriend=1;
-//                }
-//            }
-        } else {
-            jid=getIntent().getStringExtra("to");
-            itemType=existFriend(jid);
-//            //不是点通知进来的，不是好友
-//            if (!existFriend(jid)) {
-//                isFriend=2;
-//            }else if(existFriend(jid)) {//是好友
-//                isFriend=1;
-//            }
-
-        }
-//        if(isFriend==1){
-//            user=ContacterManager.getUserByJidSql(jid);
-//        }else{
-
+//        if(getIntent().getExtras().getSerializable("notice")!=null){//点通知进来的
+//
+//            notice=(Notice) getIntent().getExtras().getSerializable("notice");
+//            Log.e(TAG, "initUserInfo: notice  id="+notice.getId()+"  from= "+notice.getFrom());
+//            jid=notice.getFrom();
+//            Log.e(TAG, "initUserInfo: notice    jid= "+jid);
+//            itemType=existFriend(jid);
+//            Log.e(TAG, "initUserInfo: notice    jid= "+jid);
+////            if(notice.getNoticeType()==notice.ADD_FRIEND)
+////            {
+////                //还没添加的好友
+////                if(!existFriend(jid)){
+////                    isFriend=3;
+////                }else {
+////                    //添加了的好友
+////                    isFriend=1;
+////                }
+////            }
+//        } else {
+//            jid=getIntent().getStringExtra("to");
+//            Log.e(TAG, "initUserInfo: not notice    jid= "+jid);
+//            itemType=existFriend(jid);
+////            //不是点通知进来的，不是好友
+////            if (!existFriend(jid)) {
+////                isFriend=2;
+////            }else if(existFriend(jid)) {//是好友
+////                isFriend=1;
+////            }
+//
 //        }
-        if (!itemType.equals("none")&&!itemType.equals("remove")){
-            user=ContacterManager.getUserByJidSql(jid);
+////        if(isFriend==1){
+////            user=ContacterManager.getUserByJidSql(jid);
+////        }else{
+//
+////        }
+
+//        if (!itemType.equals("none")&&!itemType.equals("remove")){
+        if(ContacterManager.isExistInDB(jid)) {
+                user = ContacterManager.getUserByJidSql(jid);
+//            }
         }else{
             VCard vcard=null;
             try {
@@ -312,14 +327,26 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
             if (o){
                 dialog=new SpotsDialog(context, "删除成功",R.style.Custom);
                 dialog.show();
-                Intent delintent=new Intent(context,MainActivity.class);
-                startActivity(delintent);
-                dialog.dismiss();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                        Intent delintent=new Intent(context,MainActivity.class);
+                        startActivity(delintent);
+                    }
+                },500);
                 finish();
             }else{
-                dialog.dismiss();
                 dialog=new SpotsDialog(context, "删除失败",R.style.Custom);
                 dialog.show();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                    }
+                },500);
             }
             super.onPostExecute(o);
         }
@@ -327,10 +354,10 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
         protected Boolean doInBackground(Void... params) {
 
             try {
+                sendSubscribe(Presence.Type.unsubscribe, jid);
                 ContacterManager.deleteUser(jid);
                 ContacterManager.deleteDBFriend(jid);
-            }catch (XMPPException e)
-            {
+            }catch (XMPPException e) {
                 return false;
             }
             Intent delBoastcase=new Intent(Constant.ROSTER_DELETED);
@@ -348,24 +375,41 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
             if (o){
                 dialog=new SpotsDialog(context, "拒绝成功",R.style.Custom);
                 dialog.show();
-                Intent intentDeny=new Intent(context,MainActivity.class);
-                startActivity(intentDeny);
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                        Intent intentDeny=new Intent(context,MainActivity.class);
+                        startActivity(intentDeny);
+                    }
+                },500);
+
             }else{
                 dialog=new SpotsDialog(context, "拒绝失败",R.style.Custom);
                 dialog.show();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                    }
+                },500);
             }
             super.onPostExecute(o);
         }
         @Override
         protected Boolean doInBackground(Void... params) {
-            try {
-                sendSubscribe(Presence.Type.unsubscribe, jid);
-                XmppConnectionManager.getInstance().getConnection().getRoster()
-                        .createEntry(jid,StringUtil.getUserNameByJid(jid), group);
-            } catch (XMPPException e)
-            {
-                return false;
-            }
+            sendSubscribe(Presence.Type.unsubscribed, jid);
+//
+//            try {
+//                sendSubscribe(Presence.Type.unsubscribed, jid);
+//                XmppConnectionManager.getInstance().getConnection().getRoster()
+//                        .createEntry(jid,StringUtil.getUserNameByJid(jid), group);
+//            } catch (XMPPException e)
+//            {
+//                return false;
+//            }
             return true;
         }
     }
@@ -379,44 +423,61 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
             if (o){
                 dialog=new SpotsDialog(context, "验证通过",R.style.Custom);
                 dialog.show();
-                Intent intentAllow = new Intent(context, ChatActivity.class);
-                intentAllow.putExtra("to", jid);
-                startActivity(intentAllow);
-                dialog.dismiss();
-                finish();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                        Intent intentAllow = new Intent(context, ChatActivity.class);
+                        intentAllow.putExtra("to", jid);
+                        startActivity(intentAllow);
+                        finish();
+                    }
+                },500);
+
             }else{
                 dialog=new SpotsDialog(context, "验证失败",R.style.Custom);
                 dialog.show();
-                dialog.dismiss();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                    }
+                },500);
             }
             super.onPostExecute(o);
         }
         @Override
         protected Boolean doInBackground(Void... params) {
             try {
-                sendSubscribe(Presence.Type.subscribed, jid);
                 sendSubscribe(Presence.Type.subscribe, jid);
+                Log.e(TAG, "check send subscribe" );
+                sendSubscribe(Presence.Type.subscribed, jid);
+                Log.e(TAG, "check send subscribed" );
                 sendSubscribe(Presence.Type.available, jid);
+                Log.e(TAG, "check send available" );
                 if(StringUtil.empty(XmppConnectionManager.getInstance().getConnection().
                         getRoster().getEntry(jid))) {
                     XmppConnectionManager.getInstance().getConnection().getRoster()
                             .createEntry(jid, StringUtil.getUserNameByJid(jid), group);
                 }
-                if(ContacterManager.isExistInDB(jid)){
-                    Log.e(TAG, "isExistInDB jid="+jid+"entry type="+FormatUtil.ItemType2string(
-                            XmppConnectionManager.getInstance().
-                            getConnection().getRoster().getEntry(jid).getType()));
-                    ContacterManager.updateDBFriend(XmppConnectionManager.getInstance().
-                            getConnection().getRoster().getEntry(jid),jid,XmppConnectionManager.
-                            getInstance().getConnection());
-                }else{
-                    Log.e(TAG, "isnotExistInDB jid="+jid+"entry type="+FormatUtil.ItemType2string(
-                            XmppConnectionManager.getInstance().
-                                    getConnection().getRoster().getEntry(jid).getType()) );
-                    ContacterManager.insertDBFriend(XmppConnectionManager.getInstance().
-                            getConnection().getRoster().getEntry(jid),jid,XmppConnectionManager.
-                            getInstance().getConnection());
-                }
+                //todo 代码重复 待删除 和entriedUpdate
+//                if(ContacterManager.isExistInDB(jid)){
+//                    Log.e(TAG, "isExistInDB jid="+jid+"entry type="+FormatUtil.ItemType2string(
+//                            XmppConnectionManager.getInstance().
+//                            getConnection().getRoster().getEntry(jid).getType()));
+//                    ContacterManager.updateDBFriend(XmppConnectionManager.getInstance().
+//                            getConnection().getRoster().getEntry(jid),jid,XmppConnectionManager.
+//                            getInstance().getConnection());
+//                }else{
+//                    Log.e(TAG, "isnotExistInDB jid="+jid+"entry type="+FormatUtil.ItemType2string(
+//                            XmppConnectionManager.getInstance().
+//                                    getConnection().getRoster().getEntry(jid).getType()) );
+//                    ContacterManager.insertDBFriend(XmppConnectionManager.getInstance().
+//                            getConnection().getRoster().getEntry(jid),jid,XmppConnectionManager.
+//                            getInstance().getConnection());
+//                }
             }catch (XMPPException e) {
                 return false;
             }
@@ -435,13 +496,26 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
             if (o){
                 dialog=new SpotsDialog(context, "请求成功，等待验证",R.style.Custom);
                 dialog.show();
-                Intent addintent=new Intent(context,MainActivity.class);
-                startActivity(addintent);
-                finish();
-                dialog.dismiss();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                        Intent addintent=new Intent(context,MainActivity.class);
+                        startActivity(addintent);
+                        finish();
+                    }
+                },500);
             }else{
                 dialog=new SpotsDialog(context, "请求失败",R.style.Custom);
                 dialog.show();
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dialog.dismiss();
+                    }
+                },500);
             }
             super.onPostExecute(o);
         }
@@ -449,30 +523,28 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
         protected Boolean doInBackground(Void... params) {
             try {
                 sendSubscribe(Presence.Type.subscribe, jid);
-
-                sendSubscribe(Presence.Type.subscribed, jid);
-
                 if(StringUtil.empty(XmppConnectionManager.getInstance().getConnection().
                         getRoster().getEntry(jid))) {
                     XmppConnectionManager.getInstance().getConnection().getRoster()
                             .createEntry(jid, StringUtil.getUserNameByJid(jid), group);
                 }
-
-                if(ContacterManager.isExistInDB(jid)){
-                    Log.e(TAG, "isExistInDB jid="+jid+" entry type="+FormatUtil.ItemType2string(
-                            XmppConnectionManager.getInstance().
-                                    getConnection().getRoster().getEntry(jid).getType()) );
-                    ContacterManager.updateDBFriend(XmppConnectionManager.getInstance().
-                            getConnection().getRoster().getEntry(jid),jid,XmppConnectionManager.
-                            getInstance().getConnection());
-                }else{
-                    Log.e(TAG, "isnotExistInDB jid="+jid+"entry type="+FormatUtil.ItemType2string(
-                            XmppConnectionManager.getInstance().
-                                    getConnection().getRoster().getEntry(jid).getType()) );
-                    ContacterManager.insertDBFriend(XmppConnectionManager.getInstance().
-                            getConnection().getRoster().getEntry(jid),jid,XmppConnectionManager.
-                            getInstance().getConnection());
-                }
+                sendSubscribe(Presence.Type.subscribed, jid);
+                //todo 代码重复 待删除 和entriedadd
+//                if(ContacterManager.isExistInDB(jid)){
+//                    Log.e(TAG, "isExistInDB jid="+jid+" entry type="+FormatUtil.ItemType2string(
+//                            XmppConnectionManager.getInstance().
+//                                    getConnection().getRoster().getEntry(jid).getType()) );
+//                    ContacterManager.updateDBFriend(XmppConnectionManager.getInstance().
+//                            getConnection().getRoster().getEntry(jid),jid,XmppConnectionManager.
+//                            getInstance().getConnection());
+//                }else{
+//                    Log.e(TAG, "isnotExistInDB jid="+jid+"entry type="+FormatUtil.ItemType2string(
+//                            XmppConnectionManager.getInstance().
+//                                    getConnection().getRoster().getEntry(jid).getType()) );
+//                    ContacterManager.insertDBFriend(XmppConnectionManager.getInstance().
+//                            getConnection().getRoster().getEntry(jid),jid,XmppConnectionManager.
+//                            getInstance().getConnection());
+//                }
                 sendSubscribe(Presence.Type.available, jid);
             } catch (XMPPException e)
             {

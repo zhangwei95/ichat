@@ -23,7 +23,6 @@ import com.example.q.xmppclient.R;
 import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.manager.LoginConfig;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
-import com.example.q.xmppclient.task.SetVcardTask;
 import com.example.q.xmppclient.util.FormatUtil;
 import com.example.q.xmppclient.util.StringUtil;
 
@@ -47,7 +46,7 @@ public class PersonalInfoEditActivity extends ActivityBase {
     Intent intent;
     Button btn_Right;
     AlertDialog dialog;
-
+    SetVcardTask setVcardTask;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,7 +83,9 @@ public class PersonalInfoEditActivity extends ActivityBase {
                         MainActivity.currentUser.setSign(et_InfoEdit.getText().toString().trim());
                         break;
                 }
-                SetVcardTask setVcardTask=new SetVcardTask();
+                dialog=null;
+                setVcardTask=null;
+                setVcardTask=new SetVcardTask();
                 setVcardTask.execute();
             }
         });
@@ -96,17 +97,25 @@ public class PersonalInfoEditActivity extends ActivityBase {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if(count==0)
+                if(s.length()==0)
                 {
                     switch (intent.getStringExtra("EDIT"))
                     {
                         case "昵称":
                             et_InfoEdit.setHint("取个让人记得住的名字吧！");
+                            btn_Right.setClickable(false);
+                            btn_Right.setBackground(getResources().getDrawable(R.drawable.shape_gray));
                             break;
                         case "签名":
                             et_InfoEdit.setHint("还没有设置签名呢！");
+                            btn_Right.setClickable(false);
+                            btn_Right.setBackground(getResources().getDrawable(R.drawable.shape_gray));
                             break;
                     }
+                }else {
+                    btn_Right.setClickable(true);
+                    btn_Right.setBackground(getResources().getDrawable(R.drawable.shape_green));
+
                 }
             }
 
@@ -162,7 +171,7 @@ public class PersonalInfoEditActivity extends ActivityBase {
         }
         return super.onOptionsItemSelected(item);
     }
-    class SetVcardTask extends AsyncTask<Void, Integer, Boolean> {
+    private class SetVcardTask extends AsyncTask<Void, Integer, Boolean> {
         @Override
         protected void onPreExecute() {
             dialog=new SpotsDialog(context, "正在保存",R.style.Custom);
@@ -172,13 +181,14 @@ public class PersonalInfoEditActivity extends ActivityBase {
         @Override
         protected Boolean doInBackground(Void... param) {
             VCard vCard = new VCard();
+            if (!XmppConnectionManager.getInstance().getConnection().isConnected())
+                return false;
             try {
                 vCard.load(XmppConnectionManager.getInstance().getConnection());
             }catch (XMPPException e)
             {
                 return false;
             }
-
             // 设置和更新用户信息
             vCard.setNickName(loginConfig.getNickname());
             vCard.setAddressFieldHome(Constant.COUNTRY,loginConfig.getCountry());
@@ -223,8 +233,7 @@ public class PersonalInfoEditActivity extends ActivityBase {
                         startActivity(intent);
                     }
                 },500);
-            }else
-            {
+            }else {
                 dialog=new SpotsDialog(context, "保存失败",R.style.Custom);
                 dialog.show();
                 Timer timer=new Timer();

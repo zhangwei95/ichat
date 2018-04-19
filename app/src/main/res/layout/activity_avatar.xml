@@ -19,13 +19,13 @@
             android:id="@+id/btn_avatar_save"
             android:layout_gravity="right"
             android:textColor="@color/white"
-            android:background="@drawable/btn_save_clip"
+            android:background="@drawable/shape_green"
             android:visibility="gone"
-            android:textSize="32px"
+            android:textSize="14sp"
             android:text="保存"
             android:layout_marginRight="10dp"
             android:layout_width="60dp"
-            android:layout_height="35dp"/>
+            android:layout_height="36dp"/>
     </android.support.v7.widget.Toolbar>
         <ImageView
             android:id="@+id/iv_icon"

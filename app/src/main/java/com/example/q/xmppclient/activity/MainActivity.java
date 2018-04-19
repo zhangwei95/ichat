@@ -63,6 +63,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import static com.example.q.xmppclient.common.Constant.ROSTER_PRESENCE_CHANGED;
+
 public class MainActivity extends ActivityBase {
 
     //common
@@ -118,26 +120,7 @@ public class MainActivity extends ActivityBase {
 //            LoginTask loginTask = new LoginTask(this, loginConfig);
 //            loginTask.execute();
 //        }
-        inviteNotices=null;
-        inviteNotices = new ArrayList<ChatRecordInfo>();
-        for (ChatRecordInfo item : messageMgr.getRecentContactsWithLastMsg()) {
-            inviteNotices.add(item);
-        }
-        //按时间早晚排序
-        Collections.sort(inviteNotices, new Comparator<ChatRecordInfo>() {
-            @Override
-            public int compare(ChatRecordInfo o1, ChatRecordInfo o2) {
-                Date date1 = DateUtil.str2Date(o1.getNoticeTime(), Constant.MIDTIME_FORMART);
-                Date date2 = DateUtil.str2Date(o2.getNoticeTime(), Constant.MIDTIME_FORMART);
-                if (date1.before(date2)) {
-                    return 1;
-                }
-                return -1;
-            }
-        });
-        recentChatAdapter = new RecentChatAdapter(MainActivity.this,
-                R.layout.recent_chat_item, inviteNotices);
-        RecentChatListView.setAdapter(recentChatAdapter);
+        refreshRecentChat();
         super.onResume();
     }
 
@@ -423,7 +406,7 @@ public class MainActivity extends ActivityBase {
 
             filter.addAction(Constant.ROSTER_DELETED);
 
-            filter.addAction(Constant.ROSTER_PRESENCE_CHANGED);
+            filter.addAction(ROSTER_PRESENCE_CHANGED);
 
             filter.addAction(Constant.ROSTER_UPDATED);
             // 好友请求
@@ -584,60 +567,76 @@ public class MainActivity extends ActivityBase {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (Constant.NEW_MESSAGE_ACTION.equals(intent.getAction())){
-                //todo 刷新recentChatInfo
+                //收到新消息更新
                 Notice notice = (Notice) intent.getSerializableExtra("notice");
                 // String action = intent.getAction();
                 //inviteNotices.add(notice);
                 msgReceive(notice);
 //                refresh();
             }else if(Constant.GET_OFFLINEMSG.equals(intent.getAction())){
-                //todo 刷新recentChatInfo
-                inviteNotices=null;
-                inviteNotices = new ArrayList<ChatRecordInfo>();
-                for (ChatRecordInfo item : messageMgr.getRecentContactsWithLastMsg()) {
-                    inviteNotices.add(item);
-                }
-                //按时间早晚排序
-                Collections.sort(inviteNotices);
-                recentChatAdapter = new RecentChatAdapter(MainActivity.this,
-                        R.layout.recent_chat_item, inviteNotices);
-                RecentChatListView.setAdapter(recentChatAdapter);
+                refreshRecentChat();
             }else if(Constant.REFRESH_PERSONALINFO.equals(intent.getAction())){
-                tv_username.setText(currentUser.getUsername());
-                tv_nickname.setText(currentUser.getNickName());
-                image.setImageBitmap(currentUser.getIcon());
-                if (StringUtil.empty(currentUser.getSign()))
-                    tv_sign.setText("还未设置签名哦！");
-                else
-                    tv_sign.setText(currentUser.getSign());
-                if(StringUtil.empty(currentUser.getCountry())) {
-                    tv_place.setText("还未设置地区哦！");
-                }else if("中国".equals(currentUser.getCountry()))
-                {
-                    tv_place.setText(loginConfig.getProvince()+" "+loginConfig.getCity());
-                }else
-                {
-                    tv_place.setText(loginConfig.getCountry());
-                }
+                refreshPersonalInfo();
             }else if(Constant.LOGIN_FAILED.equals(intent.getAction())){
                 if(!XmppConnectionManager.getInstance().getConnection().isConnected()){
                     LoginTask loginTask=new LoginTask(MainActivity.this,loginConfig);
                     loginTask.execute();
                 }
             }else if(Constant.ROSTER_ADDED.equals(intent.getAction())||
-                    Constant.ROSTER_DELETED.equals(intent.getAction())||
                     Constant.ROSTER_UPDATED.equals(intent.getAction())||
-                    Constant.ROSTER_PRESENCE_CHANGED.equals(intent.getAction())){
-                friendadapter=new FriendAdapter(context,R.layout.friend_list_item,
-                        ContacterManager.getBothContacterList());
-                friendListView.setAdapter(friendadapter);
-                friendadapter.notifyDataSetChanged();
+                    ROSTER_PRESENCE_CHANGED.equals(intent.getAction())){
+                refreshFriendList();
+            }else if(Constant.ROSTER_DELETED.equals(intent.getAction())){
+                refreshFriendList();
+                refreshRecentChat();
+            }else if(ROSTER_PRESENCE_CHANGED.equals(intent.getAction())){
+                refreshFriendList();
             }
+
 //            else if(Constant.ROSTER_SUBSCRIPTION.equals(intent.getAction())){
 //                //todo 刷新FriendList界面
 //                friendadapter.notifyDataSetChanged();
 //            }
 
+        }
+    }
+    //刷新最近联系人列表
+    public void refreshRecentChat(){
+        inviteNotices=null;
+        inviteNotices = new ArrayList<ChatRecordInfo>();
+        for (ChatRecordInfo item : messageMgr.getRecentContactsWithLastMsg()) {
+            inviteNotices.add(item);
+        }
+        //按时间早晚排序
+        Collections.sort(inviteNotices);
+        recentChatAdapter = new RecentChatAdapter(MainActivity.this,
+                R.layout.recent_chat_item, inviteNotices);
+        RecentChatListView.setAdapter(recentChatAdapter);
+    }
+    //刷新好友列表
+    public void refreshFriendList(){
+        friendadapter=new FriendAdapter(context,R.layout.friend_list_item,
+                ContacterManager.getBothContacterList());
+        friendListView.setAdapter(friendadapter);
+        friendadapter.notifyDataSetChanged();
+    }
+    //刷新个人信息列表
+    public void refreshPersonalInfo(){
+        tv_username.setText(currentUser.getUsername());
+        tv_nickname.setText(currentUser.getNickName());
+        image.setImageBitmap(currentUser.getIcon());
+        if (StringUtil.empty(currentUser.getSign()))
+            tv_sign.setText("还未设置签名哦！");
+        else
+            tv_sign.setText(currentUser.getSign());
+        if(StringUtil.empty(currentUser.getCountry())) {
+            tv_place.setText("还未设置地区哦！");
+        }else if("中国".equals(currentUser.getCountry()))
+        {
+            tv_place.setText(loginConfig.getProvince()+" "+loginConfig.getCity());
+        }else
+        {
+            tv_place.setText(loginConfig.getCountry());
         }
     }
 

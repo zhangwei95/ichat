@@ -258,7 +258,9 @@ public class User implements Parcelable,Comparable{
             }
         }
         selfStr=selfStr.split("&")[1];
+        selfStr=selfStr.toLowerCase();
         otherStr=otherStr.split("&")[1];
+        otherStr=otherStr.toLowerCase();
         return selfStr.compareTo(otherStr);
     }
 

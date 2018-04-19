@@ -32,7 +32,9 @@ import com.example.q.xmppclient.manager.NoticeManager;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.util.StringUtil;
 
+import org.jivesoftware.smack.RosterEntry;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.RosterPacket;
 
 import java.util.List;
 
@@ -50,13 +52,13 @@ public class ChatActivity extends AChatActivity  {
     private View listHead;
     private int recordCount;
     private MessageListAdapter adapter = null;
-
-
+    RosterEntry entry;
     LinearLayout tishi;
     TextView showadduser;
     Button chatuseradd;
     private int lastVisibleItemPosition = 0;// 标记上次滑动位置，初始化默认为0
     private boolean scrollFlag = false;// 标记是否滑动
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -98,53 +100,54 @@ public class ChatActivity extends AChatActivity  {
         iv_voice=(ImageView)findViewById(R.id.iv_voice);
         iv_faceicon=(ImageView)findViewById(R.id.iv_faceicon);
         iv_addicon=(ImageView)findViewById(R.id.iv_add);
-        if (!getIntent().getBooleanExtra("isFriend", true)) {
-            //todo 显示是否添加好友
-            tishi.setVisibility(View.VISIBLE);
-            showadduser.setVisibility(View.VISIBLE);
-            chatuseradd.setVisibility(View.VISIBLE);
-            chatuseradd.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    sendSubscribe(Presence.Type.subscribed, to);
-//                    sendSubscribe(Presence.Type.subscribe, to);
-                    // removeInviteNotice(notice.getId());
-                    NoticeManager noticeManager = NoticeManager
-                            .getInstance(context);
-                    noticeManager.updateAddFriendStatus(
-                            to,
-                            Notice.READ,
-                            "已经同意"
-                                    + StringUtil.getUserNameByJid(to
-                                     + "的好友申请"));
-                    getIntent().putExtra("isFriend", true);
+        entry=XmppConnectionManager.getInstance().getConnection().getRoster().getEntry(to);
 
-                    initComponent();
-                }
-            });
-            list = new MessageList();
-            chatList.setCacheColorHint(0);
-            adapter = new MessageListAdapter(ChatActivity.this,getMessages(),
-                    chatList, pageSize);
-            chatList.setAdapter(adapter);
-            ETinputMsg = (EditText) findViewById(R.id.et_InputMsg);
-            BtnMsgSend = (Button) findViewById(R.id.btn_MsgSend);
+        //todo 判断好友状态 显示提示信息
+        if(entry!=null){
+            if(entry.getType()== RosterPacket.ItemType.to){
+                //todo 显示是否添加好友
+                tishi.setVisibility(View.VISIBLE);
+                showadduser.setVisibility(View.VISIBLE);
+                chatuseradd.setVisibility(View.VISIBLE);
+                chatuseradd.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        sendSubscribe(Presence.Type.subscribed, to);
+//                    sendSubscribe(Presence.Type.subscribe, to);
+                        // removeInviteNotice(notice.getId());
+                        NoticeManager noticeManager = NoticeManager
+                                .getInstance(context);
+                        noticeManager.updateAddFriendStatus(
+                                to,
+                                Notice.READ,
+                                "已经同意"
+                                        + StringUtil.getUserNameByJid(to
+                                        + "的好友申请"));
+                        getIntent().putExtra("isFriend", true);
+                        initComponent();
+                    }
+                });
+            }else if(entry.getType()== RosterPacket.ItemType.both) {
+                tishi.setVisibility(View.GONE);
+            }
         }
-        else
-        {
-            tishi.setVisibility(View.GONE);
-            list = new MessageList();
-            chatList.setCacheColorHint(0);
-            adapter = new MessageListAdapter(ChatActivity.this, getMessages(),
-                    chatList, pageSize);
-            chatList.setAdapter(adapter);
-            ETinputMsg = (EditText) findViewById(R.id.et_InputMsg);
-            BtnMsgSend = (Button) findViewById(R.id.btn_MsgSend);
+        list = new MessageList();
+        chatList.setCacheColorHint(0);
+        adapter = new MessageListAdapter(ChatActivity.this, getMessages(),
+                chatList, pageSize);
+        chatList.setAdapter(adapter);
+        ETinputMsg = (EditText) findViewById(R.id.et_InputMsg);
+        BtnMsgSend = (Button) findViewById(R.id.btn_MsgSend);
+//        if (!getIntent().getBooleanExtra("isFriend", true)) {
+//
+//        }
+//        else
+//        {
 //        LayoutInflater mynflater = LayoutInflater.from(context);
 //        listHead = mynflater.inflate(R.layout.chatlistheader, null);
 //        listHeadButton = (Button) listHead.findViewById(R.id.buttonChatHistory);
 //        listHeadButton.setOnClickListener(chatHistoryCk);
-        }
+//        }
         ETinputMsg.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -174,14 +177,19 @@ public class ChatActivity extends AChatActivity  {
         BtnMsgSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String message = ETinputMsg.getText().toString();
+                String message = ETinputMsg.getText().toString().trim();
                 if ("".equals(message)) {
                     Toast.makeText(ChatActivity.this, "不能为空",
                             Toast.LENGTH_SHORT).show();
                 } else {
                     try {
-                        sendMessage(message);
-                        ETinputMsg.setText("");
+                        if(entry.getType()== RosterPacket.ItemType.both){
+                            sendMessage(message);
+                            ETinputMsg.setText("");
+                        }else{
+                            showToast("对方已不是您的好友！");
+                        }
+
                     } catch (Exception e) {
                         showToast("信息发送失败");
                         ETinputMsg.setText(message);

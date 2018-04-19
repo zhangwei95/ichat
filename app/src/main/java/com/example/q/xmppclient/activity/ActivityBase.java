@@ -40,8 +40,8 @@ public class ActivityBase extends AppCompatActivity implements IActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        CrashHandler crashHandler = CrashHandler.getInstance();
-//        crashHandler.init(getApplicationContext());
+        CrashHandler crashHandler = CrashHandler.getInstance();
+        crashHandler.init(getApplicationContext());
         context=this;
         sharedPreferences=getSharedPreferences(Constant.LOGIN_SET,MODE_PRIVATE);
         Editer=sharedPreferences.edit();

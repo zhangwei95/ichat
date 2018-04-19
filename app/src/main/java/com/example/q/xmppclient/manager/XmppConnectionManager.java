@@ -38,7 +38,6 @@ public class XmppConnectionManager {
     private static XMPPConnection connection;
     private static ConnectionConfiguration connectionConfiguration;
     private volatile static XmppConnectionManager xmppConnectionManager;
-
     private XmppConnectionManager()
     {
 

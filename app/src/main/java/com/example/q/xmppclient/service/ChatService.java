@@ -72,8 +72,7 @@ public class ChatService extends Service {
             if(message!=null&&message.getBody()!=null&&!message.getBody().equals("null"))
             {
                 ChatMessage msg=new ChatMessage();
-                String time = DateUtil.date2Str(Calendar.getInstance(),
-                    Constant.LONGTIME_FORMART);
+                String time = (String) message.getProperty("immessage.time");
                 msg.setTime(time);
                 msg.setContent(message.getBody());
                 if (message.getType()==Message.Type.error)
@@ -130,8 +129,7 @@ public class ChatService extends Service {
      * @param contentText
      *            你内容
      * @param activity
-     * @author shimiso
-     * @update 2012-5-14 下午12:01:55
+
      */
     private void setNotiType(int iconId, String contentTitle,
                              String contentText, Class activity, String from) {

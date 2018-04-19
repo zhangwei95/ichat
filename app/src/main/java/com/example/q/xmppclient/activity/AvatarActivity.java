@@ -9,8 +9,10 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.FileProvider;
 import android.os.Bundle;
+import android.support.v4.content.Loader;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -50,7 +52,7 @@ public class AvatarActivity extends ActivityBase {
     private  static final  int TAKE_PHOTO=1;
     private  Uri imageUri;
     private static final int CHOOSE_PHOTO=0;
-
+    SetVcardTask setVcardTask=null;
 
     public void initActionBar()
     {
@@ -62,7 +64,9 @@ public class AvatarActivity extends ActivityBase {
         btn_avatar_save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SetVcardTask setVcardTask=new SetVcardTask();
+                setVcardTask=null;
+                dialog=null;
+                setVcardTask=new SetVcardTask();
                 setVcardTask.execute(FormatUtil.drawable2Bitmap(iv_icon.getDrawable()));
             }
         });
@@ -224,12 +228,18 @@ public class AvatarActivity extends ActivityBase {
         super.onPause();
         dialog=null;
     }
-
-    class SetVcardTask extends AsyncTask<Bitmap, Integer, Boolean> {
+    private class SetVcardTask extends AsyncTask<Bitmap, Integer, Boolean> {
         @Override
         protected void onPreExecute() {
             dialog=new SpotsDialog(context, "正在保存",R.style.Custom);
             dialog.show();
+            Timer timer=new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+
+                }
+            },500);
             super.onPreExecute();
         }
         @Override
@@ -272,6 +282,7 @@ public class AvatarActivity extends ActivityBase {
                     @Override
                     public void run() {
                         dialog.dismiss();
+                        dialog=null;
                         MainActivity.currentUser.setIcon(
                                 FormatUtil.drawable2Bitmap(iv_icon.getDrawable()));
                         Intent updateIntent=new Intent();
@@ -289,6 +300,7 @@ public class AvatarActivity extends ActivityBase {
                     @Override
                     public void run() {
                         dialog.dismiss();
+                        dialog=null;
 //                        Intent intent = new Intent(AvatarActivity.this, MainActivity.class);
 //                        intent.putExtra("action", "edit");
 //                        startActivity(intent);

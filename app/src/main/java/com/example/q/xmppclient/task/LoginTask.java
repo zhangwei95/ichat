@@ -164,7 +164,7 @@ public class LoginTask extends AsyncTask<String, Integer, Integer> {
                 });
                 executor.execute(future);
                 try {
-                    Boolean result = future.get(100000, TimeUnit.MILLISECONDS);
+                    Boolean result = future.get(10000, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();

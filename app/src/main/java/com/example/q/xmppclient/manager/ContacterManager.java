@@ -73,6 +73,8 @@ public class ContacterManager {
                 } else {
 //                String sql = "select count(*) from im_contactors where jid=? and status='checked'";
 //                if (st.isExistsBySQL(sql, new String[]{entry.getUser()})) {
+                    Log.e(TAG, "init----- User  jid="+entry.getUser()+"--DBitemtype="+
+                            FormatUtil.ItemType2string(entry.getType()) );
                     contacters.put(entry.getUser(),
                             insertDBFriend(entry, entry.getUser(), connection));
                 }
@@ -449,7 +451,6 @@ public class ContacterManager {
         RosterEntry entry = roster.getEntry(userJid);
         XmppConnectionManager.getInstance().getConnection().getRoster()
                 .removeEntry(entry);
-
     }
     /**
      * 从数据库中删除用户
