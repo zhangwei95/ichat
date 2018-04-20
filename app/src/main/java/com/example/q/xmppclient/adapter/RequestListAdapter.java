@@ -44,6 +44,12 @@ public class RequestListAdapter extends RecyclerView.Adapter<RequestListAdapter.
     AlertDialog dialog;
     User user;
 
+    //不同的位置获取不同的布局文件
+//    @Override
+//    public int getItemViewType(int position) {
+//        return super.getItemViewType(position);
+//    }
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.request_list_item,parent,false);

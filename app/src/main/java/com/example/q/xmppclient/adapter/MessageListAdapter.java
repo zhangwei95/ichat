@@ -38,11 +38,12 @@ public class MessageListAdapter extends BaseAdapter {
 
 
     public MessageListAdapter(Context context, List<ChatMessage> items,
-                              ListView adapterList,int psize) {
+                              ListView adapterList,int psize,User chatUser) {
         this.context = context;
         this.items = items;
         this.adapterList = adapterList;
         this.pagesize=psize;
+        this.user=chatUser;
     }
 
     public void refreshList(List<ChatMessage> items) {
@@ -114,7 +115,6 @@ public class MessageListAdapter extends BaseAdapter {
             userIcon.setImageBitmap(MainActivity.currentUser.getIcon());
             dateView.setText(DateUtil.LongDate2Short(message.getTime()));
             msgView.setText(message.getContent());
-
         }
         return convertView;
     }

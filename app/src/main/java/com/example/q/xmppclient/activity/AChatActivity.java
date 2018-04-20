@@ -16,13 +16,16 @@ import com.example.q.xmppclient.manager.MessageManager;
 import com.example.q.xmppclient.manager.NoticeManager;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.util.DateUtil;
+import com.example.q.xmppclient.util.FormatUtil;
 
 import org.jivesoftware.smack.Chat;
 import org.jivesoftware.smack.ChatManager;
 import org.jivesoftware.smack.ChatManagerListener;
 import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smackx.packet.VCard;
 
 import java.util.Calendar;
 import java.util.Collections;
@@ -48,6 +51,23 @@ public abstract class AChatActivity extends ActivityBase {
         xmppConnection=xmppConnectionManager.getConnection();
         if(xmppConnection.isConnected()){
             chatUser = ContacterManager.getByUserJid(to,xmppConnection);
+            if(chatUser==null){
+                chatUser=new User();
+                try {
+                    VCard vCard = new VCard();
+                    vCard.load(XmppConnectionManager.getInstance().getConnection(),to);
+                    chatUser.setNickName(vCard.getNickName());
+                    chatUser.setVCard(vCard);
+                    chatUser.setProvince(vCard.getAddressFieldHome(Constant.PROVINCE));
+                    chatUser.setCity(vCard.getAddressFieldHome(Constant.CITY));
+                    chatUser.setSign(vCard.getAddressFieldHome(Constant.SIGN));
+                    chatUser.setCountry(vCard.getAddressFieldHome(Constant.COUNTRY));
+                    chatUser.setIcon(FormatUtil.Bytes2Bitmap(vCard.getAvatar()));
+                }catch (XMPPException e)
+                {
+                    e.printStackTrace();
+                }
+            }
         }else{
             chatUser=ContacterManager.getUserByJidSql(to);
         }
@@ -121,7 +141,6 @@ public abstract class AChatActivity extends ActivityBase {
         message_pool.add(newMessage);
         MessageManager.getInstance(context).saveChatMessage(newMessage);
         // MChatManager.message_pool.add(newMessage);
-
         // 刷新视图
         refreshMessage(message_pool);
     }

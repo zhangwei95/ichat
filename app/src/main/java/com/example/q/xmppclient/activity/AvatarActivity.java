@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -245,8 +246,13 @@ public class AvatarActivity extends ActivityBase {
         @Override
         protected Boolean doInBackground(Bitmap... param) {
             VCard vCard = new VCard();
-            if (!XmppConnectionManager.getInstance().getConnection().isConnected())
-                return false;
+            if (!XmppConnectionManager.getInstance().getConnection().isConnected()) {
+                try {
+                    XmppConnectionManager.getInstance().getConnection().connect();
+                } catch (XMPPException e) {
+                    e.printStackTrace();
+                }
+            }
             try {
                 vCard.load(XmppConnectionManager.getInstance().getConnection());
             }catch (XMPPException e) {

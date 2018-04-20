@@ -71,9 +71,7 @@ public class ContacterManager {
                     contacters.put(entry.getUser(),
                             user );
                 } else {
-//                String sql = "select count(*) from im_contactors where jid=? and status='checked'";
-//                if (st.isExistsBySQL(sql, new String[]{entry.getUser()})) {
-                    Log.e(TAG, "init----- User  jid="+entry.getUser()+"--DBitemtype="+
+                    Log.e(TAG, "init----- User  jid="+entry.getUser()+"--itemtype="+
                             FormatUtil.ItemType2string(entry.getType()) );
                     contacters.put(entry.getUser(),
                             insertDBFriend(entry, entry.getUser(), connection));
@@ -117,7 +115,6 @@ public class ContacterManager {
             e.printStackTrace();
         }
         return user;
-
     }
 
     public static void destroy() {
@@ -162,7 +159,8 @@ public class ContacterManager {
         List<User> userList= new ArrayList<User>();
         for(User user:getContacterList()){
             if(user.getItemType()!= RosterPacket.ItemType.both
-                    &&user.getItemType()!= RosterPacket.ItemType.remove){
+                    &&user.getItemType()!= RosterPacket.ItemType.remove
+                    &&user.getItemType()!= RosterPacket.ItemType.none){
                 userList.add(user);
             }
         }

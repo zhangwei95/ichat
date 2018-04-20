@@ -176,7 +176,7 @@ public class MessageManager {
                             }
                         },
                         "select m.[_id],m.[content],m.[msg_time],m.msg_from from im_msg_his  m join " +
-                                "(select msg_from,max(msg_time) as time from im_msg_his group by msg_from) as tem  " +
+                                "(select msg_from,max(msg_time) as time from im_msg_his group by msg_from) as tem " +
                                 "on  tem.time=m.msg_time and tem.msg_from=m.msg_from ",
                         null);
         for (ChatRecordInfo b : list) {

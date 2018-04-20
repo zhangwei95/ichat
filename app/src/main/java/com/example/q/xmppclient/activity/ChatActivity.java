@@ -113,7 +113,7 @@ public class ChatActivity extends AChatActivity  {
                     @Override
                     public void onClick(View v) {
                         sendSubscribe(Presence.Type.subscribed, to);
-//                    sendSubscribe(Presence.Type.subscribe, to);
+//                      sendSubscribe(Presence.Type.subscribe, to);
                         // removeInviteNotice(notice.getId());
                         NoticeManager noticeManager = NoticeManager
                                 .getInstance(context);
@@ -127,14 +127,66 @@ public class ChatActivity extends AChatActivity  {
                         initComponent();
                     }
                 });
+            } else if(entry.getType()== RosterPacket.ItemType.from) {
+                //todo 显示是否添加好友
+                tishi.setVisibility(View.VISIBLE);
+                showadduser.setText("等待对方通过好友请求");
+                showadduser.setVisibility(View.VISIBLE);
+                chatuseradd.setVisibility(View.VISIBLE);
+                chatuseradd.setText("等待");
+                chatuseradd.setClickable(false);
+                tishi.bringToFront();
+
+            }else if(entry.getType()== RosterPacket.ItemType.none) {
+                //todo 显示是否添加好友
+                tishi.setVisibility(View.VISIBLE);
+                showadduser.setVisibility(View.VISIBLE);
+                chatuseradd.setVisibility(View.VISIBLE);
+                chatuseradd.setText("添加");
+                chatuseradd.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        sendSubscribe(Presence.Type.subscribe, to);
+//                      sendSubscribe(Presence.Type.subscribe, to);
+                        // removeInviteNotice(notice.getId());
+                        getIntent().putExtra("isFriend", true);
+                        initComponent();
+                    }
+                });
             }else if(entry.getType()== RosterPacket.ItemType.both) {
                 tishi.setVisibility(View.GONE);
             }
+        }else{
+            //todo 显示是否添加好友
+            tishi.setVisibility(View.VISIBLE);
+            showadduser.setText("是否添加对方为好友");
+            chatuseradd.setText("添加");
+            showadduser.setVisibility(View.VISIBLE);
+            chatuseradd.setVisibility(View.VISIBLE);
+            tishi.bringToFront();
+            chatuseradd.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    sendSubscribe(Presence.Type.subscribed, to);
+//                    sendSubscribe(Presence.Type.subscribe, to);
+                    // removeInviteNotice(notice.getId());
+                    NoticeManager noticeManager = NoticeManager
+                            .getInstance(context);
+                    noticeManager.updateAddFriendStatus(
+                            to,
+                            Notice.READ,
+                            "已经同意"
+                                    + StringUtil.getUserNameByJid(to
+                                    + "的好友申请"));
+                    getIntent().putExtra("isFriend", true);
+                    initComponent();
+                }
+            });
         }
         list = new MessageList();
         chatList.setCacheColorHint(0);
         adapter = new MessageListAdapter(ChatActivity.this, getMessages(),
-                chatList, pageSize);
+                chatList, pageSize,chatUser);
         chatList.setAdapter(adapter);
         ETinputMsg = (EditText) findViewById(R.id.et_InputMsg);
         BtnMsgSend = (Button) findViewById(R.id.btn_MsgSend);
@@ -183,13 +235,12 @@ public class ChatActivity extends AChatActivity  {
                             Toast.LENGTH_SHORT).show();
                 } else {
                     try {
-                        if(entry.getType()== RosterPacket.ItemType.both){
+                        if(entry!=null&&entry.getType()== RosterPacket.ItemType.both){
                             sendMessage(message);
                             ETinputMsg.setText("");
                         }else{
-                            showToast("对方已不是您的好友！");
+                            showToast("对方不是您的好友！");
                         }
-
                     } catch (Exception e) {
                         showToast("信息发送失败");
                         ETinputMsg.setText(message);
@@ -200,11 +251,8 @@ public class ChatActivity extends AChatActivity  {
         });
             //todo获取历史记录
         chatList.setOnScrollListener(new AbsListView.OnScrollListener() {
-
-
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-
                 //判断状态
                 switch (scrollState) {
                     // 当不滚动时
@@ -213,9 +261,7 @@ public class ChatActivity extends AChatActivity  {
                         // 判断滚动到底部 、position是从0开始算起的
                         if (chatList.getLastVisiblePosition() == (chatList
                                 .getCount() - 1)) {
-
                             //TODO
-
                         }
                         // 判断滚动到顶部
                         if (chatList.getFirstVisiblePosition() == 0) {
@@ -226,7 +272,6 @@ public class ChatActivity extends AChatActivity  {
                                 Toast.makeText(ChatActivity.this, "没有更多的历史消息", Toast.LENGTH_SHORT).show();
                             }
                         }
-
                         break;
                     case AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL:// 滚动时
                         scrollFlag = true;
@@ -317,7 +362,7 @@ public class ChatActivity extends AChatActivity  {
 //            listHead.setVisibility(View.VISIBLE);
 //        }
             adapter = new MessageListAdapter(ChatActivity.this, getMessages(),
-                    chatList, pageSize);
+                    chatList, pageSize,chatUser);
             chatList.setAdapter(adapter);
             adapter.refreshList(getMessages());
         }

@@ -577,6 +577,7 @@ public class MainActivity extends ActivityBase {
                 refreshRecentChat();
             }else if(Constant.REFRESH_PERSONALINFO.equals(intent.getAction())){
                 refreshPersonalInfo();
+                refreshRecentChat();
             }else if(Constant.LOGIN_FAILED.equals(intent.getAction())){
                 if(!XmppConnectionManager.getInstance().getConnection().isConnected()){
                     LoginTask loginTask=new LoginTask(MainActivity.this,loginConfig);

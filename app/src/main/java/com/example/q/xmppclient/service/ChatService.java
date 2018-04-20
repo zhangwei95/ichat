@@ -69,22 +69,18 @@ public class ChatService extends Service {
         @Override
         public void processPacket(Packet packet) {
             Message message=(Message)packet;
-            if(message!=null&&message.getBody()!=null&&!message.getBody().equals("null"))
-            {
+            if(message!=null&&message.getBody()!=null&&!message.getBody().equals("null")) {
                 ChatMessage msg=new ChatMessage();
                 String time = (String) message.getProperty("immessage.time");
                 msg.setTime(time);
                 msg.setContent(message.getBody());
-                if (message.getType()==Message.Type.error)
-                {
+                if (message.getType()==Message.Type.error) {
                     msg.setType(ChatMessage.ERROR);
-                }else
-                {
+                }else {
                     msg.setType(ChatMessage.SUCCESS);
                 }
                 String from=message.getFrom().split("/")[0];
                 msg.setFromSubJid(from);
-
                 //生成通知
                 NoticeManager noticeManager = NoticeManager
                         .getInstance(context);

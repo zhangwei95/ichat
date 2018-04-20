@@ -336,7 +336,6 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
                         startActivity(delintent);
                     }
                 },500);
-                finish();
             }else{
                 dialog=new SpotsDialog(context, "删除失败",R.style.Custom);
                 dialog.show();
@@ -352,7 +351,6 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
         }
         @Override
         protected Boolean doInBackground(Void... params) {
-
             try {
                 sendSubscribe(Presence.Type.unsubscribe, jid);
                 ContacterManager.deleteUser(jid);
@@ -431,7 +429,6 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
                         Intent intentAllow = new Intent(context, ChatActivity.class);
                         intentAllow.putExtra("to", jid);
                         startActivity(intentAllow);
-                        finish();
                     }
                 },500);
 
@@ -503,7 +500,6 @@ public class UserInfoActivity extends ActivityBase implements View.OnClickListen
                         dialog.dismiss();
                         Intent addintent=new Intent(context,MainActivity.class);
                         startActivity(addintent);
-                        finish();
                     }
                 },500);
             }else{

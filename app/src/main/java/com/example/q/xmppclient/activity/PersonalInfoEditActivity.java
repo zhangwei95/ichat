@@ -181,12 +181,16 @@ public class PersonalInfoEditActivity extends ActivityBase {
         @Override
         protected Boolean doInBackground(Void... param) {
             VCard vCard = new VCard();
-            if (!XmppConnectionManager.getInstance().getConnection().isConnected())
-                return false;
+            if (!XmppConnectionManager.getInstance().getConnection().isConnected()) {
+                try {
+                    XmppConnectionManager.getInstance().getConnection().connect();
+                } catch (XMPPException e) {
+                    e.printStackTrace();
+                }
+            }
             try {
                 vCard.load(XmppConnectionManager.getInstance().getConnection());
-            }catch (XMPPException e)
-            {
+            }catch (XMPPException e) {
                 return false;
             }
             // 设置和更新用户信息
@@ -196,22 +200,21 @@ public class PersonalInfoEditActivity extends ActivityBase {
             vCard.setAddressFieldHome(Constant.CITY,loginConfig.getCity());
             vCard.setAddressFieldHome(Constant.SIGN,loginConfig.getSign());
             vCard.setAvatar(getDefaultAvatar());
-
             try {
                 vCard.save(XmppConnectionManager.getInstance().getConnection());
                 Presence subscription = new Presence(Presence.Type.available);
                 XmppConnectionManager.getInstance().getConnection()
                         .sendPacket(subscription);
-                saveLoginConfig(loginConfig);
-                MainActivity.currentUser.setNickName(loginConfig.getNickname());
-                MainActivity.currentUser.setSign(loginConfig.getSign());
-                MainActivity.currentUser.setProvince(loginConfig.getProvince());
-                MainActivity.currentUser.setCity(loginConfig.getCity());
-                MainActivity.currentUser.setCountry(loginConfig.getCountry());
-                return true;
             } catch (XMPPException e) {
                 return false;
             }
+            MainActivity.currentUser.setNickName(loginConfig.getNickname());
+            MainActivity.currentUser.setSign(loginConfig.getSign());
+            MainActivity.currentUser.setProvince(loginConfig.getProvince());
+            MainActivity.currentUser.setCity(loginConfig.getCity());
+            MainActivity.currentUser.setCountry(loginConfig.getCountry());
+            saveLoginConfig(loginConfig);
+            return true;
         }
 
         @Override

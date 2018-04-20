@@ -111,8 +111,7 @@ public class RegisterTask extends AsyncTask<String,Integer,Integer> {
             if(!xmppConnection.isConnected()) {
                 xmppConnection.connect();
             }
-        }catch (XMPPException e)
-        {
+        }catch (XMPPException e) {
             return Constant.REGISTER_SERVER_UNAVAILABLE;
         }
         Registration reg=new Registration();
@@ -131,20 +130,16 @@ public class RegisterTask extends AsyncTask<String,Integer,Integer> {
         IQ result = (IQ) collector.nextResult(SmackConfiguration
                 .getPacketReplyTimeout());
         collector.cancel();
-        if (result==null)
-        {
+        if (result==null) {
             return Constant.REGISTER_SERVER_UNAVAILABLE;
-        }else if(result.getType()==IQ.Type.ERROR)
-        {
-            if (result.getError().toString().equalsIgnoreCase("conflict(409)"))
-            {
+        }else if(result.getType()==IQ.Type.ERROR) {
+            if (result.getError().toString().equalsIgnoreCase("conflict(409)")) {
+                //用户存在
                 return Constant.USER_EXIST;
-            }else
-            {
-                //todo 其他的一些注册失败结果
+            }else {
+                return Constant.OTHER_REGISTER_ERROR;
             }
-        }else if(result.getType()==IQ.Type.RESULT)
-        {
+        }else if(result.getType()==IQ.Type.RESULT) {
             return Constant.REGISTER_SUCCESS;
         }
         return Constant.OTHER_REGISTER_ERROR;

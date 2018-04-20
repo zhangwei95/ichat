@@ -11,11 +11,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.q.xmppclient.R;
+import com.example.q.xmppclient.common.Constant;
 import com.example.q.xmppclient.entity.ChatRecordInfo;
 import com.example.q.xmppclient.entity.User;
 import com.example.q.xmppclient.manager.ContacterManager;
 import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.util.FormatUtil;
+import com.example.q.xmppclient.util.StringUtil;
+
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smackx.packet.VCard;
 
 import java.util.List;
 
@@ -74,14 +79,27 @@ public class RecentChatAdapter extends BaseAdapter {
         User u = ContacterManager.getUserByJidSql(jid);
         if (null == u) {
             u = new User();
-            u.setNickName(jid);
+            if (XmppConnectionManager.getInstance().getConnection().isConnected()){
+                try {
+                    VCard vCard = new VCard();
+                    vCard.load(XmppConnectionManager.getInstance().getConnection(),jid);
+                    u.setNickName(vCard.getNickName());
+                    u.setVCard(vCard);
+                    u.setProvince(vCard.getAddressFieldHome(Constant.PROVINCE));
+                    u.setCity(vCard.getAddressFieldHome(Constant.CITY));
+                    u.setSign(vCard.getAddressFieldHome(Constant.SIGN));
+                    u.setCountry(vCard.getAddressFieldHome(Constant.COUNTRY));
+                    u.setIcon(FormatUtil.Bytes2Bitmap(vCard.getAvatar()));
+                }catch (XMPPException e) {
+                    u.setNickName(StringUtil.getUserNameByJid(jid));
+                    e.printStackTrace();
+                }
+            }
         }
-
         holder.newTitle.setText(u.getNickName());
         if(u.getIcon()==null) {
             holder.itemIcon.setImageResource(R.drawable.default_icon);
-        }else
-        {
+        }else {
             holder.itemIcon.setImageDrawable(FormatUtil.bitmap2Drawable(u.getIcon()));
         }
         holder.newContent.setText(notice.getContent());

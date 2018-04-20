@@ -32,6 +32,7 @@
         android:supportsRtl="true"
         android:persistent="true"
         android:theme="@style/launchTheme"
+
         tools:replace="android:name">
         <meta-data
             android:name="Mob-AppKey"
@@ -47,7 +48,6 @@
             android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <!-- <intent-filter> -->
@@ -115,7 +115,7 @@
         <activity android:name=".activity.PhoneCheckActivity" />
         <activity
             android:name=".activity.UserAddActivity"
-            android:windowSoftInputMode="stateAlwaysVisible" />
+            android:windowSoftInputMode="stateHidden" />
         <activity android:name=".activity.GroupActivity" />
 
         <service
