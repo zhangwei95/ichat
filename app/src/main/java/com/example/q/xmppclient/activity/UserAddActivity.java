@@ -1,32 +1,49 @@
 package com.example.q.xmppclient.activity;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.q.xmppclient.R;
+import com.example.q.xmppclient.adapter.RequestListAdapter;
 import com.example.q.xmppclient.common.Constant;
+import com.example.q.xmppclient.entity.User;
+import com.example.q.xmppclient.manager.ContacterManager;
 import com.example.q.xmppclient.manager.LoginConfig;
+import com.example.q.xmppclient.manager.XmppConnectionManager;
 import com.example.q.xmppclient.util.StringUtil;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class UserAddActivity extends ActivityBase {
     Toolbar toolbar;
     EditText et_search;
     LoginConfig loginConfig;
+    RecyclerView request_list;
+    List<User> userList;
+    RequestListAdapter adapter;
+    AlertDialog dialog;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,7 +64,12 @@ public class UserAddActivity extends ActivityBase {
     {
         et_search=(EditText)findViewById(R.id.et_search);
         et_search.setFocusable(true);
-
+        request_list= (RecyclerView) findViewById(R.id.request_list);
+        userList= ContacterManager.getValidateContacterList();
+        LinearLayoutManager layoutmanager = new LinearLayoutManager(this);
+        request_list.setLayoutManager(layoutmanager);
+        adapter=new RequestListAdapter(userList,context,dialog);
+        request_list.setAdapter(adapter);
         et_search.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -59,13 +81,36 @@ public class UserAddActivity extends ActivityBase {
                 return false;
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        userList= ContacterManager.getValidateContacterList();
+        adapter.notifyDataSetChanged();
 
     }
-    public void showSoftInput() {
-        InputMethodManager inputMethodManager = (InputMethodManager) getContext().
-                getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputMethodManager.showSoftInput(et_search, InputMethodManager.SHOW_IMPLICIT);
+    public void hideInputWindow(Activity context){
+        if(context==null){
+            return;
+        }
+        final View v = ((Activity) context).getWindow().peekDecorView();
+        if (v != null && v.getWindowToken() != null) {
+            InputMethodManager imm = (InputMethodManager) context.getSystemService(context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+        }
     }
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+    }
+
+//    public void showSoftInput() {
+//        InputMethodManager inputMethodManager = (InputMethodManager) getContext().
+//                getSystemService(Context.INPUT_METHOD_SERVICE);
+//        inputMethodManager.showSoftInput(et_search, InputMethodManager.SHOW_IMPLICIT);
+//    }
     public void dosearchFriend(String username)
     {
         final String jid=StringUtil.getJidByName(username,getLoginConfig().getServerName());
@@ -82,9 +127,13 @@ public class UserAddActivity extends ActivityBase {
                     Toast.makeText(UserAddActivity.this,"网络异常，请确认连接！",Toast.LENGTH_SHORT).show();
                     break;
                 default:
-                    Intent intent=new Intent(UserAddActivity.this,UserInfoActivity.class);
-                    intent.putExtra("to",jid);
-                    startActivity(intent);
+                    if(XmppConnectionManager.getInstance().getConnection().isConnected()) {
+                        Intent intent = new Intent(UserAddActivity.this, UserInfoActivity.class);
+                        intent.putExtra("to", jid);
+                        startActivity(intent);
+                    }else{
+                        Toast.makeText(UserAddActivity.this,"网络异常，请确认连接！",Toast.LENGTH_SHORT).show();
+                    }
                     break;
             }
             super.handleMessage(msg);
@@ -121,7 +170,7 @@ public class UserAddActivity extends ActivityBase {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                finish();
+                    finish();
                 break;
         }
         return super.onOptionsItemSelected(item);
